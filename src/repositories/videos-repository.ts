@@ -63,7 +63,7 @@ export const videosLocalRepository = {
             });
         }
 
-        if (title && (typeof title !== 'string' || !title.trim())) {
+        if (title && (typeof title !== 'string' || !title.trim() || title.length > 40)) {
             errorsMessages.push({
                 message: 'invalid title format',
                 field: 'title'
@@ -77,7 +77,7 @@ export const videosLocalRepository = {
             });
         }
 
-        if (author && (typeof author !== 'string' || !author.trim())) {
+        if (author && (typeof author !== 'string' || !author.trim() || author.length > 20)) {
             errorsMessages.push({
                 message: 'invalid author format',
                 field: 'author'
