@@ -1,41 +1,35 @@
 import { Router, Request, Response } from 'express';
-import { videos, videosLocalRepository } from '../repositories/videos-repository';
-import { CodeResponsesEnum } from '../index';
+import { body } from 'express-validator';
+import { CodeResponsesEnum } from '../types';
+import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
+import { videosLocalRepository } from '../repositories/videos-repository';
 
 export const videosRouter = Router({});
 
-videosRouter.get('/', (req: Request, res: Response) => {
-    res.send(videos);
+const titleValidation = body('title').isString().withMessage('title is invalid').trim().notEmpty().withMessage('title is required').isLength({ max: 40 }).withMessage('title is too long');
+const authorValidation = body('author').isString().withMessage('author is invalid').trim().notEmpty().withMessage('author is required').isLength({ max: 20 }).withMessage('author is too long');
+const canBeDownloadedValidation = body('canBeDownloaded', 'can be downloaded is invalid').optional().isBoolean({ strict: true });
+const minAgeRestrictionValidation = body('minAgeRestriction', 'min age restriction is invalid').optional({ nullable: true }).not().isString().not().isArray().isInt({ min: 1, max: 18 });
+const publicationDateValidation = body('publicationDate', 'publication date is invalid').optional().not().isArray().isISO8601();
+const availableResolutionsValidation = body('availableResolutions', 'available resolutions is invalid').optional({ nullable: true }).isArray().custom(value => {
+    const validValues = ['P144', 'P240', 'P360', 'P480', 'P720', 'P1080', 'P1440', 'P2160'];
+    const isInvalid = value.some((item: string) => !validValues.includes(item));
+
+    if (isInvalid || !value.length) {
+        return false;
+    }
+
+    return true;
 });
 
-videosRouter.post('/', (req: Request, res: Response) => {
-    const errors = videosLocalRepository.getErrorsMessages(req.body);
+videosRouter.get('/', (req: Request, res: Response) => {
+    const foundVideos = videosLocalRepository.findVideos();
 
-    if (!errors.errorsMessages) {
-        const newVideo = {
-            id: +(new Date()),
-            title: req.body.title.trim(),
-            author: req.body.author.trim(),
-            canBeDownloaded: req.body.canBeDownloaded || false,
-            minAgeRestriction: req.body.minAgeRestriction || null,
-            createdAt: new Date().toISOString(),
-            publicationDate: !req.body.publicationDate ?
-                new Date((new Date()).setDate((new Date()).getDate() + 1)).toISOString() :
-                new Date(req.body.publicationDate).toISOString(),
-
-            availableResolutions: req.body.availableResolutions || null
-        };
-
-        videos.push(newVideo);
-        res.status(CodeResponsesEnum.Created_201).send(newVideo);
-    } else {
-        res.status(CodeResponsesEnum.Incorrect_values_400).send(errors);
-    }
+    res.send(foundVideos);
 });
 
 videosRouter.get('/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
-    const video = videos.find(v => v.id === id);
+    const video = videosLocalRepository.findVideo(+req.params.videoId);
 
     if (!video) {
         res.send(CodeResponsesEnum.Not_found_404);
@@ -44,50 +38,46 @@ videosRouter.get('/:videoId', (req: Request, res: Response) => {
     }
 });
 
-videosRouter.put('/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
-    const video = videos.find(v => v.id === id);
+videosRouter.post('/',
+    titleValidation,
+    authorValidation,
+    canBeDownloadedValidation,
+    minAgeRestrictionValidation,
+    publicationDateValidation,
+    availableResolutionsValidation,
+    inputValidationMiddleware,
+    (req: Request, res: Response) => {
+        const newVideo = videosLocalRepository.createVideo(req.body);
 
-    if (!video) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        const errors = videosLocalRepository.getErrorsMessages(req.body);
+        res.status(CodeResponsesEnum.Created_201).send(newVideo);
+    }
+);
 
-        if (!errors.errorsMessages) {
-            video.title = req.body.title.trim();
-            video.author = req.body.author.trim();
+videosRouter.put('/:videoId',
+    titleValidation,
+    authorValidation,
+    canBeDownloadedValidation,
+    minAgeRestrictionValidation,
+    publicationDateValidation,
+    availableResolutionsValidation,
+    inputValidationMiddleware,
+    (req: Request, res: Response) => {
+        const updatedVideo = videosLocalRepository.updateVideo(+req.params.videoId, req.body);
 
-            if (req.body.hasOwnProperty('canBeDownloaded')) {
-                video.canBeDownloaded = req.body.canBeDownloaded || false;
-            }
-
-            if (req.body.hasOwnProperty('minAgeRestriction')) {
-                video.minAgeRestriction = req.body.minAgeRestriction || null;
-            }
-
-            if (req.body.hasOwnProperty('publicationDate') && req.body.publicationDate) {
-                video.publicationDate = new Date(req.body.publicationDate).toISOString();
-            }
-
-            if (req.body.hasOwnProperty('availableResolutions')) {
-                video.availableResolutions = req.body.availableResolutions || null;
-            }
-
-            res.send(CodeResponsesEnum.Not_content_204);
+        if (!updatedVideo) {
+            res.send(CodeResponsesEnum.Not_found_404);
         } else {
-            res.status(CodeResponsesEnum.Incorrect_values_400).send(errors);
+            res.send(CodeResponsesEnum.Not_content_204);
         }
     }
-});
+);
 
 videosRouter.delete('/:videoId', (req: Request, res: Response) => {
-    const id = +req.params.videoId;
-    const videoIndex = videos.findIndex(v => v.id === id);
+    const deletedVideo = videosLocalRepository.removeVideo(+req.params.videoId);
 
-    if (videoIndex < 0) {
+    if (!deletedVideo) {
         res.send(CodeResponsesEnum.Not_found_404);
     } else {
-        videos.splice(videoIndex, 1);
         res.send(CodeResponsesEnum.Not_content_204);
     }
 });

@@ -1,148 +1,82 @@
-type FieldErrorType = {
-    message: string | null;
-    field: string | null;
-};
-
-type ErrorsMessagesType = {
-    errorsMessages: FieldErrorType[] | null;
-};
-
-enum AvailableResolutionsEnum {
-    P144 = 'P144',
-    P240 = 'P240',
-    P360 = 'P360',
-    P480 = 'P480',
-    P720 = 'P720',
-    P1080 = 'P1080',
-    P1440 = 'P1440',
-    P2160 = 'P2160'
-}
-
-export type VideoType = {
-    id: number;
-    title: string;
-    author: string;
-    canBeDownloaded: boolean;
-    minAgeRestriction: number | null;
-    createdAt: string;
-    publicationDate: string;
-    availableResolutions: Array<
-        AvailableResolutionsEnum.P144 |
-        AvailableResolutionsEnum.P240 |
-        AvailableResolutionsEnum.P360 |
-        AvailableResolutionsEnum.P480 |
-        AvailableResolutionsEnum.P720 |
-        AvailableResolutionsEnum.P1080 |
-        AvailableResolutionsEnum.P1440 |
-        AvailableResolutionsEnum.P2160
-    > | null;
-};
-
-export let videos: VideoType[] = [];
+import { db } from '../db/db';
+import { VideoModel } from '../models/VideoModel';
 
 export const videosLocalRepository = {
-    deleteAll(): void {
-        videos = [];
+    findVideos(): VideoModel[] {
+        return db.videos;
     },
 
-    getErrorsMessages(video: VideoType): ErrorsMessagesType {
-        const errorsMessages = [];
-        const {
-            title,
-            author,
-            canBeDownloaded,
-            minAgeRestriction,
-            publicationDate,
-            availableResolutions
-        } = video;
+    findVideo(id: number): VideoModel | null {
+        const video = db.videos.find(video => video.id === id);
 
-        if (!title) {
-            errorsMessages.push({
-                message: 'title is required',
-                field: 'title'
-            });
+        if (!video) {
+            return null;
         }
 
-        if (title && (typeof title !== 'string' || !title.trim() || title.length > 40)) {
-            errorsMessages.push({
-                message: 'invalid title format',
-                field: 'title'
-            });
+        return video;
+    },
+
+    createVideo({ title, author, canBeDownloaded, minAgeRestriction, publicationDate, availableResolutions }: VideoModel): VideoModel {
+        const newVideo = {
+            id: +(new Date()),
+            title: title,
+            author: author,
+            canBeDownloaded: canBeDownloaded || false,
+            minAgeRestriction: minAgeRestriction || null,
+            createdAt: new Date().toISOString(),
+            availableResolutions: availableResolutions || null,
+            publicationDate: !publicationDate ?
+                new Date((new Date()).setDate((new Date()).getDate() + 1)).toISOString() :
+                new Date(publicationDate).toISOString()
+        };
+
+        db.videos.push(newVideo);
+
+        return newVideo;
+    },
+
+    updateVideo(id: number, newVideo: VideoModel): VideoModel | null {
+        const video = db.videos.find(video => video.id === id);
+
+        if (!video) {
+            return null;
         }
 
-        if (!author) {
-            errorsMessages.push({
-                message: 'author is required',
-                field: 'author'
-            });
+        video.title = newVideo.title;
+        video.author = newVideo.author;
+
+        if (newVideo.hasOwnProperty('canBeDownloaded')) {
+            video.canBeDownloaded = newVideo.canBeDownloaded;
         }
 
-        if (author && (typeof author !== 'string' || !author.trim() || author.length > 20)) {
-            errorsMessages.push({
-                message: 'invalid author format',
-                field: 'author'
-            });
+        if (newVideo.hasOwnProperty('minAgeRestriction')) {
+            video.minAgeRestriction = newVideo.minAgeRestriction;
         }
 
-        if (canBeDownloaded && typeof canBeDownloaded !== 'boolean') {
-            errorsMessages.push({
-                message: 'invalid can be downloaded format',
-                field: 'canBeDownloaded'
-            });
+        if (newVideo.hasOwnProperty('publicationDate')) {
+            video.publicationDate = new Date(newVideo.publicationDate as string).toISOString();
         }
 
-        if (minAgeRestriction && typeof minAgeRestriction !== 'number') {
-            errorsMessages.push({
-                message: 'invalid min age restriction format',
-                field: 'minAgeRestriction'
-            });
+        if (newVideo.hasOwnProperty('availableResolutions')) {
+            video.availableResolutions = newVideo.availableResolutions;
         }
 
-        if (typeof minAgeRestriction === 'number' && minAgeRestriction < 1) {
-            errorsMessages.push({
-                message: 'min age restriction must be 1 or greater',
-                field: 'minAgeRestriction'
-            });
+        return video;
+    },
+
+    removeVideo(id: number): VideoModel | null {
+        const videoIndex = db.videos.findIndex(video => video.id === id);
+
+        if (videoIndex < 0) {
+            return null;
         }
 
-        if (typeof minAgeRestriction === 'number' && minAgeRestriction > 18) {
-            errorsMessages.push({
-                message: 'min age restriction must be 18 or smaller',
-                field: 'minAgeRestriction'
-            });
-        }
+        const removedVideos = db.videos.splice(videoIndex, 1);
 
-        if (
-            publicationDate &&
-            (
-                typeof publicationDate !== 'string' ||
-                isNaN(Date.parse(publicationDate))
-            )
-        ) {
-            errorsMessages.push({
-                message: 'invalid publication date format',
-                field: 'publicationDate'
-            });
-        }
+        return removedVideos[0];
+    },
 
-        if (
-            availableResolutions &&
-            (
-                !Array.isArray(availableResolutions) ||
-                !availableResolutions.length ||
-                availableResolutions.some(resolution => !AvailableResolutionsEnum[resolution])
-            )
-        ) {
-            errorsMessages.push({
-                message: 'invalid available resolutions format',
-                field: 'availableResolutions'
-            });
-        }
-
-        if (!errorsMessages.length) {
-            return { errorsMessages: null };
-        }
-
-        return { errorsMessages };
+    deleteAll(): void {
+        db.videos = [];
     }
 };
