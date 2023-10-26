@@ -8,8 +8,7 @@ import { postsRouter } from './routes/posts-router';
 
 export const app = express();
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser({}));
 app.use(routerPaths.videos, videosRouter);
 app.use(routerPaths.blogs, blogsRouter);
 app.use(routerPaths.posts, postsRouter);
