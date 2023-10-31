@@ -22,14 +22,14 @@ const availableResolutionsValidation = body('availableResolutions', 'available r
     return true;
 });
 
-videosRouter.get('/', (req: Request, res: Response) => {
-    const foundVideos = videosLocalRepository.findVideos();
+videosRouter.get('/', async (req: Request, res: Response) => {
+    const foundVideos = await videosLocalRepository.findVideos();
 
     res.send(foundVideos);
 });
 
-videosRouter.get('/:videoId', (req: Request, res: Response) => {
-    const video = videosLocalRepository.findVideo(+req.params.videoId);
+videosRouter.get('/:videoId', async (req: Request, res: Response) => {
+    const video = await videosLocalRepository.findVideo(+req.params.videoId);
 
     if (!video) {
         res.send(CodeResponsesEnum.Not_found_404);
@@ -46,8 +46,8 @@ videosRouter.post('/',
     publicationDateValidation,
     availableResolutionsValidation,
     inputValidationMiddleware,
-    (req: Request, res: Response) => {
-        const newVideo = videosLocalRepository.createVideo(req.body);
+    async (req: Request, res: Response) => {
+        const newVideo = await videosLocalRepository.createVideo(req.body);
 
         res.status(CodeResponsesEnum.Created_201).send(newVideo);
     }
@@ -61,8 +61,8 @@ videosRouter.put('/:videoId',
     publicationDateValidation,
     availableResolutionsValidation,
     inputValidationMiddleware,
-    (req: Request, res: Response) => {
-        const updatedVideo = videosLocalRepository.updateVideo(+req.params.videoId, req.body);
+    async (req: Request, res: Response) => {
+        const updatedVideo = await videosLocalRepository.updateVideo(+req.params.videoId, req.body);
 
         if (!updatedVideo) {
             res.send(CodeResponsesEnum.Not_found_404);
@@ -72,8 +72,8 @@ videosRouter.put('/:videoId',
     }
 );
 
-videosRouter.delete('/:videoId', (req: Request, res: Response) => {
-    const deletedVideo = videosLocalRepository.removeVideo(+req.params.videoId);
+videosRouter.delete('/:videoId', async (req: Request, res: Response) => {
+    const deletedVideo = await videosLocalRepository.removeVideo(+req.params.videoId);
 
     if (!deletedVideo) {
         res.send(CodeResponsesEnum.Not_found_404);

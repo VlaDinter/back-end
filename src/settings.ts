@@ -9,10 +9,10 @@ export const getAppRouter = (app: Express) => {
         res.send('Hello back-end HomeWorks in it-incubator!!!');
     });
 
-    app.delete('/testing/all-data', (req: Request, res: Response) => {
-        videosLocalRepository.deleteAll();
-        blogsLocalRepository.deleteAll();
-        postsLocalRepository.deleteAll();
+    app.delete('/testing/all-data', async (req: Request, res: Response) => {
+        await videosLocalRepository.deleteAll();
+        await blogsLocalRepository.deleteAll();
+        await postsLocalRepository.deleteAll();
         res.sendStatus(CodeResponsesEnum.Not_content_204);
     });
 };

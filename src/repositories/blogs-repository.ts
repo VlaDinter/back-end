@@ -1,13 +1,13 @@
-import { db } from '../db/db';
+import { blogsCollection } from '../db/db';
 import { BlogModel } from '../models/BlogModel';
 
 export const blogsLocalRepository = {
-    findBlogs(): BlogModel[] {
-        return db.blogs;
+    async findBlogs(): Promise<BlogModel[]> {
+        return blogsCollection.find({}).toArray();
     },
 
-    findBlog(id: string): BlogModel | null {
-        const blog = db.blogs.find(blog => blog.id === id);
+    async findBlog(id: string): Promise<BlogModel | null> {
+        const blog = await blogsCollection.findOne({ id });
 
         if (!blog) {
             return null;
@@ -16,46 +16,44 @@ export const blogsLocalRepository = {
         return blog;
     },
 
-    createBlog({ name, description, websiteUrl }: BlogModel): BlogModel {
+    async createBlog({ name, description, websiteUrl }: BlogModel): Promise<BlogModel> {
         const newBlog = {
             id: `${+(new Date())}`,
             name,
             description,
-            websiteUrl
+            websiteUrl,
+            createdAt: new Date().toISOString(),
+            isMembership: false
         };
 
-        db.blogs.push(newBlog);
+        const result = await blogsCollection.insertOne(newBlog);
 
         return newBlog;
     },
 
-    updateBlog(id: string, { name, description, websiteUrl }: BlogModel): BlogModel | null {
-        const blog = db.blogs.find(blog => blog.id === id);
+    async updateBlog(id: string, newBlog: BlogModel): Promise<BlogModel | null> {
+        const result = await blogsCollection.updateOne({ id }, { $set: newBlog });
+        const blog = await this.findBlog(id);
 
-        if (!blog) {
-            return null;
+        if (result.matchedCount === 1) {
+            return blog;
         }
 
-        blog.name = name;
-        blog.description = description;
-        blog.websiteUrl = websiteUrl;
-
-        return blog;
+        return null;
     },
 
-    removeBlog(id: string): BlogModel | null {
-        const blogIndex = db.blogs.findIndex(blog => blog.id === id);
+    async removeBlog(id: string): Promise<BlogModel | null> {
+        const blog = await this.findBlog(id);
+        const result = await blogsCollection.deleteOne({ id });
 
-        if (blogIndex < 0) {
-            return null;
-        }
+       if (result.deletedCount === 1) {
+           return blog;
+       }
 
-        const removedBlogs = db.blogs.splice(blogIndex, 1);
-
-        return removedBlogs[0];
+        return null;
     },
 
-    deleteAll(): void {
-        db.blogs = [];
+    async deleteAll(): Promise<void> {
+        await blogsCollection.deleteMany({});
     }
 };

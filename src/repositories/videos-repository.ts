@@ -1,13 +1,13 @@
-import { db } from '../db/db';
+import { videosCollection } from '../db/db';
 import { VideoModel } from '../models/VideoModel';
 
 export const videosLocalRepository = {
-    findVideos(): VideoModel[] {
-        return db.videos;
+    async findVideos(): Promise<VideoModel[]> {
+        return videosCollection.find({}).toArray();
     },
 
-    findVideo(id: number): VideoModel | null {
-        const video = db.videos.find(video => video.id === id);
+    async findVideo(id: number): Promise<VideoModel | null> {
+        const video = await videosCollection.findOne({ id });
 
         if (!video) {
             return null;
@@ -16,7 +16,7 @@ export const videosLocalRepository = {
         return video;
     },
 
-    createVideo({ title, author, canBeDownloaded, minAgeRestriction, publicationDate, availableResolutions }: VideoModel): VideoModel {
+    async createVideo({ title, author, canBeDownloaded, minAgeRestriction, publicationDate, availableResolutions }: VideoModel): Promise<VideoModel> {
         const newVideo = {
             id: +(new Date()),
             title: title,
@@ -30,53 +30,34 @@ export const videosLocalRepository = {
                 new Date(publicationDate).toISOString()
         };
 
-        db.videos.push(newVideo);
+        const result = await videosCollection.insertOne(newVideo);
 
         return newVideo;
     },
 
-    updateVideo(id: number, newVideo: VideoModel): VideoModel | null {
-        const video = db.videos.find(video => video.id === id);
+    async updateVideo(id: number, newVideo: VideoModel): Promise<VideoModel | null> {
+        const result = await videosCollection.updateOne({ id }, { $set: newVideo });
+        const video = await this.findVideo(id);
 
-        if (!video) {
-            return null;
+        if (result.matchedCount === 1) {
+            return video;
         }
 
-        video.title = newVideo.title;
-        video.author = newVideo.author;
-
-        if (newVideo.hasOwnProperty('canBeDownloaded')) {
-            video.canBeDownloaded = newVideo.canBeDownloaded;
-        }
-
-        if (newVideo.hasOwnProperty('minAgeRestriction')) {
-            video.minAgeRestriction = newVideo.minAgeRestriction;
-        }
-
-        if (newVideo.hasOwnProperty('publicationDate')) {
-            video.publicationDate = new Date(newVideo.publicationDate as string).toISOString();
-        }
-
-        if (newVideo.hasOwnProperty('availableResolutions')) {
-            video.availableResolutions = newVideo.availableResolutions;
-        }
-
-        return video;
+        return null;
     },
 
-    removeVideo(id: number): VideoModel | null {
-        const videoIndex = db.videos.findIndex(video => video.id === id);
+    async removeVideo(id: number): Promise<VideoModel | null> {
+        const video = await this.findVideo(id);
+        const result = await videosCollection.deleteOne({ id });
 
-        if (videoIndex < 0) {
-            return null;
+        if (result.deletedCount === 1) {
+            return video;
         }
 
-        const removedVideos = db.videos.splice(videoIndex, 1);
-
-        return removedVideos[0];
+        return null;
     },
 
-    deleteAll(): void {
-        db.videos = [];
+    async deleteAll(): Promise<void> {
+        await videosCollection.deleteMany({});
     }
 };

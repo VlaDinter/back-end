@@ -1,14 +1,14 @@
-import { db } from '../db/db';
+import { postsCollection } from '../db/db';
 import { PostModel } from '../models/PostModel';
 import { blogsLocalRepository } from './blogs-repository';
 
 export const postsLocalRepository = {
-    findPosts(): PostModel[] {
-        return db.posts;
+    async findPosts(): Promise<PostModel[]> {
+        return postsCollection.find({}).toArray();
     },
 
-    findPost(id: string): PostModel | null {
-        const post = db.posts.find(post => post.id === id);
+    async findPost(id: string): Promise<PostModel | null> {
+        const post = await postsCollection.findOne({ id });
 
         if (!post) {
             return null;
@@ -17,50 +17,46 @@ export const postsLocalRepository = {
         return post;
     },
 
-    createPost({ title, shortDescription, content, blogId }: PostModel): PostModel {
-        const blog = blogsLocalRepository.findBlog(blogId);
+    async createPost({ title, shortDescription, content, blogId }: PostModel): Promise<PostModel> {
+        const blog = await blogsLocalRepository.findBlog(blogId);
         const newPost = {
             id: `${+(new Date())}`,
             title: title,
             shortDescription: shortDescription,
             content: content,
             blogId,
-            blogName: blog!.name
+            blogName: blog!.name,
+            createdAt: new Date().toISOString(),
         };
 
-        db.posts.push(newPost);
+        const result = await postsCollection.insertOne(newPost);
 
         return newPost;
     },
 
-    updatePost(id: string, { title, shortDescription, content, blogId }: PostModel): PostModel | null {
-        const post = db.posts.find(post => post.id === id);
+    async updatePost(id: string, newPost: PostModel): Promise<PostModel | null> {
+        const result = await postsCollection.updateOne({ id }, { $set: newPost });
+        const post = await this.findPost(id);
 
-        if (!post) {
-            return null;
+        if (result.matchedCount === 1) {
+            return post;
         }
 
-        post.title = title;
-        post.shortDescription = shortDescription;
-        post.content = content;
-        post.blogId = blogId;
-
-        return post;
+        return null;
     },
 
-    removePost(id: string): PostModel | null {
-        const postIndex = db.posts.findIndex(post => post.id === id);
+    async removePost(id: string): Promise<PostModel | null> {
+        const post = await this.findPost(id);
+        const result = await postsCollection.deleteOne({ id });
 
-        if (postIndex < 0) {
-            return null;
+        if (result.deletedCount === 1) {
+            return post;
         }
 
-        const removedPosts = db.posts.splice(postIndex, 1);
-
-        return removedPosts[0];
+        return null;
     },
 
-    deleteAll(): void {
-        db.posts = [];
+    async deleteAll(): Promise<void> {
+        await postsCollection.deleteMany({});
     }
 };
