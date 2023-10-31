@@ -4,6 +4,7 @@ import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { CodeResponsesEnum } from '../types';
 import { authorizationMiddleware } from '../middlewares/authorization-middleware';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
+import {BlogModel} from "../models/BlogModel";
 
 export const blogsRouter = Router({});
 
@@ -14,7 +15,14 @@ const websiteUrlValidation = body('websiteUrl').notEmpty().withMessage('website 
 blogsRouter.get('/', async (req: Request, res: Response) => {
     const foundBlogs = await blogsLocalRepository.findBlogs();
 
-    res.send(foundBlogs);
+    res.send(foundBlogs.map((item: BlogModel) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        websiteUrl: item.websiteUrl,
+        createdAt: item.createdAt,
+        isMembership: item.isMembership
+    })));
 });
 
 blogsRouter.get('/:blogId', async (req: Request, res: Response) => {

@@ -13,7 +13,14 @@ export const blogsLocalRepository = {
             return null;
         }
 
-        return blog;
+        return {
+            id: blog.id,
+            name: blog.name,
+            description: blog.description,
+            websiteUrl: blog.websiteUrl,
+            createdAt: blog.createdAt,
+            isMembership: blog.isMembership
+        };
     },
 
     async createBlog({ name, description, websiteUrl }: BlogModel): Promise<BlogModel> {
@@ -28,7 +35,14 @@ export const blogsLocalRepository = {
 
         const result = await blogsCollection.insertOne(newBlog);
 
-        return newBlog;
+        return {
+            id: newBlog.id,
+            name: newBlog.name,
+            description: newBlog.description,
+            websiteUrl: newBlog.websiteUrl,
+            createdAt: newBlog.createdAt,
+            isMembership: newBlog.isMembership
+        };
     },
 
     async updateBlog(id: string, newBlog: BlogModel): Promise<BlogModel | null> {
