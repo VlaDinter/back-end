@@ -3,7 +3,18 @@ import { VideoModel } from '../models/VideoModel';
 
 export const videosLocalRepository = {
     async findVideos(): Promise<VideoModel[]> {
-        return videosCollection.find({}).toArray();
+        const videos = await videosCollection.find({}).toArray();
+
+        return videos.map(video => ({
+            id: video.id,
+            title: video.title,
+            author: video.author,
+            canBeDownloaded: video.canBeDownloaded,
+            minAgeRestriction: video.minAgeRestriction,
+            createdAt: video.createdAt,
+            availableResolutions: video.availableResolutions,
+            publicationDate: video.publicationDate
+        }));
     },
 
     async findVideo(id: number): Promise<VideoModel | null> {
@@ -13,7 +24,16 @@ export const videosLocalRepository = {
             return null;
         }
 
-        return video;
+        return {
+            id: video.id,
+            title: video.title,
+            author: video.author,
+            canBeDownloaded: video.canBeDownloaded,
+            minAgeRestriction: video.minAgeRestriction,
+            createdAt: video.createdAt,
+            availableResolutions: video.availableResolutions,
+            publicationDate: video.publicationDate
+        };
     },
 
     async createVideo({ title, author, canBeDownloaded, minAgeRestriction, publicationDate, availableResolutions }: VideoModel): Promise<VideoModel> {
@@ -32,15 +52,37 @@ export const videosLocalRepository = {
 
         const result = await videosCollection.insertOne(newVideo);
 
-        return newVideo;
+        return {
+            id: newVideo.id,
+            title: newVideo.title,
+            author: newVideo.author,
+            canBeDownloaded: newVideo.canBeDownloaded,
+            minAgeRestriction: newVideo.minAgeRestriction,
+            createdAt: newVideo.createdAt,
+            availableResolutions: newVideo.availableResolutions,
+            publicationDate: newVideo.publicationDate
+        };
     },
 
-    async updateVideo(id: number, newVideo: VideoModel): Promise<VideoModel | null> {
-        const result = await videosCollection.updateOne({ id }, { $set: newVideo });
+    async updateVideo(id: number, { title, author, canBeDownloaded, minAgeRestriction, publicationDate, availableResolutions }: VideoModel): Promise<VideoModel | null> {
+        const result = await videosCollection.updateOne(
+            { id },
+            { $set: { title, author, canBeDownloaded, minAgeRestriction, availableResolutions, publicationDate: publicationDate && new Date(publicationDate).toISOString() } }
+        );
+
         const video = await this.findVideo(id);
 
         if (result.matchedCount === 1) {
-            return video;
+            return {
+                id: video!.id,
+                title: video!.title,
+                author: video!.author,
+                canBeDownloaded: video!.canBeDownloaded,
+                minAgeRestriction: video!.minAgeRestriction,
+                createdAt: video!.createdAt,
+                availableResolutions: video!.availableResolutions,
+                publicationDate: video!.publicationDate
+            };
         }
 
         return null;
@@ -51,7 +93,16 @@ export const videosLocalRepository = {
         const result = await videosCollection.deleteOne({ id });
 
         if (result.deletedCount === 1) {
-            return video;
+            return {
+                id: video!.id,
+                title: video!.title,
+                author: video!.author,
+                canBeDownloaded: video!.canBeDownloaded,
+                minAgeRestriction: video!.minAgeRestriction,
+                createdAt: video!.createdAt,
+                availableResolutions: video!.availableResolutions,
+                publicationDate: video!.publicationDate
+            };
         }
 
         return null;

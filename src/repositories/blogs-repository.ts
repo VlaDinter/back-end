@@ -3,7 +3,16 @@ import { BlogModel } from '../models/BlogModel';
 
 export const blogsLocalRepository = {
     async findBlogs(): Promise<BlogModel[]> {
-        return blogsCollection.find({}).toArray();
+        const blogs = await blogsCollection.find({}).toArray();
+
+        return blogs.map(blog => ({
+            id: blog.id,
+            name: blog.name,
+            description: blog.description,
+            websiteUrl: blog.websiteUrl,
+            createdAt: blog.createdAt,
+            isMembership: blog.isMembership
+        }));
     },
 
     async findBlog(id: string): Promise<BlogModel | null> {
@@ -45,12 +54,23 @@ export const blogsLocalRepository = {
         };
     },
 
-    async updateBlog(id: string, newBlog: BlogModel): Promise<BlogModel | null> {
-        const result = await blogsCollection.updateOne({ id }, { $set: newBlog });
+    async updateBlog(id: string, { name, description, websiteUrl }: BlogModel): Promise<BlogModel | null> {
+        const result = await blogsCollection.updateOne(
+            { id },
+            { $set: { name, description, websiteUrl } }
+        );
+
         const blog = await this.findBlog(id);
 
         if (result.matchedCount === 1) {
-            return blog;
+            return {
+                id: blog!.id,
+                name: blog!.name,
+                description: blog!.description,
+                websiteUrl: blog!.websiteUrl,
+                createdAt: blog!.createdAt,
+                isMembership: blog!.isMembership
+            };
         }
 
         return null;
@@ -61,7 +81,14 @@ export const blogsLocalRepository = {
         const result = await blogsCollection.deleteOne({ id });
 
        if (result.deletedCount === 1) {
-           return blog;
+           return {
+               id: blog!.id,
+               name: blog!.name,
+               description: blog!.description,
+               websiteUrl: blog!.websiteUrl,
+               createdAt: blog!.createdAt,
+               isMembership: blog!.isMembership
+           };
        }
 
         return null;
