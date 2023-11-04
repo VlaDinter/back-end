@@ -9,7 +9,7 @@ export const blogsLocalRepository = {
         const filter: { name?: { $regex: string } } = {};
 
         if (filters.searchNameTerm) {
-            filter.name = { $regex: filters.searchNameTerm };
+            filter.name = { $regex: `^${filters.searchNameTerm}$`, $options: 'i' };
         }
 
         return blogsCollection.find(filter);
