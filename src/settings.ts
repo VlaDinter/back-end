@@ -1,8 +1,8 @@
 import { Express, Request, Response } from 'express';
-import { videosLocalRepository } from './repositories/videos-repository';
-import { blogsLocalRepository } from './repositories/blogs-repository';
 import { CodeResponsesEnum } from './types';
-import { postsLocalRepository } from './repositories/posts-repository';
+import { blogsService } from './domain/blogs-service';
+import { postsService } from './domain/posts-service';
+import { videosService } from './domain/videos-service';
 
 export const getAppRouter = (app: Express) => {
     app.get('/', (req: Request, res: Response) => {
@@ -10,9 +10,9 @@ export const getAppRouter = (app: Express) => {
     });
 
     app.delete('/testing/all-data', async (req: Request, res: Response) => {
-        await videosLocalRepository.deleteAll();
-        await blogsLocalRepository.deleteAll();
-        await postsLocalRepository.deleteAll();
+        await videosService.deleteAll();
+        await blogsService.deleteAll();
+        await postsService.deleteAll();
         res.sendStatus(CodeResponsesEnum.Not_content_204);
     });
 };

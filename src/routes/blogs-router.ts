@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
-import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { CodeResponsesEnum } from '../types';
 import { authorizationMiddleware } from '../middlewares/authorization-middleware';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
+import { blogsService } from '../domain/blogs-service';
+import { contentValidation, shortDescriptionValidation, titleValidation } from './posts-router';
 
 export const blogsRouter = Router({});
 
@@ -12,18 +13,18 @@ const descriptionValidation = body('description').isString().withMessage('descri
 const websiteUrlValidation = body('websiteUrl').notEmpty().withMessage('website url is required').isURL().withMessage('website url does not match the template').not().isArray().withMessage('website url is invalid').isLength({ max: 100 }).withMessage('website url is too long');
 
 blogsRouter.get('/', async (req: Request, res: Response) => {
-    const foundBlogs = await blogsLocalRepository.findBlogs();
+    const foundBlogs = await blogsService.getBlogs(req.query);
 
     res.send(foundBlogs);
 });
 
 blogsRouter.get('/:blogId', async (req: Request, res: Response) => {
-    const blog = await blogsLocalRepository.findBlog(req.params.blogId);
+    const foundBlog = await blogsService.getBlog(req.params.blogId);
 
-    if (!blog) {
+    if (!foundBlog) {
         res.send(CodeResponsesEnum.Not_found_404);
     } else {
-        res.send(blog);
+        res.send(foundBlog);
     }
 });
 
@@ -34,9 +35,9 @@ blogsRouter.post('/',
     websiteUrlValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const newBlog = await blogsLocalRepository.createBlog(req.body);
+        const createdBlog = await blogsService.setBlog(req.body);
 
-        res.status(CodeResponsesEnum.Created_201).send(newBlog);
+        res.status(CodeResponsesEnum.Created_201).send(createdBlog);
     }
 );
 
@@ -47,7 +48,7 @@ blogsRouter.put('/:blogId',
     websiteUrlValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const updatedBlog = await blogsLocalRepository.updateBlog(req.params.blogId, req.body);
+        const updatedBlog = await blogsService.editBlog(req.params.blogId, req.body);
 
         if (!updatedBlog) {
             res.send(CodeResponsesEnum.Not_found_404);
@@ -58,7 +59,7 @@ blogsRouter.put('/:blogId',
 );
 
 blogsRouter.delete('/:blogId', authorizationMiddleware, async (req: Request, res: Response) => {
-    const deletedBlog = await blogsLocalRepository.removeBlog(req.params.blogId);
+    const deletedBlog = await blogsService.deleteBlog(req.params.blogId);
 
     if (!deletedBlog) {
         res.send(CodeResponsesEnum.Not_found_404);
@@ -66,3 +67,30 @@ blogsRouter.delete('/:blogId', authorizationMiddleware, async (req: Request, res
         res.send(CodeResponsesEnum.Not_content_204);
     }
 });
+
+blogsRouter.get('/:blogId/posts', async (req: Request, res: Response) => {
+    const foundPosts = await blogsService.getPosts(req.params.blogId, req.query);
+
+    if (!foundPosts) {
+        res.send(CodeResponsesEnum.Not_found_404);
+    } else {
+        res.send(foundPosts);
+    }
+});
+
+blogsRouter.post('/:blogId/posts',
+    authorizationMiddleware,
+    titleValidation,
+    shortDescriptionValidation,
+    contentValidation,
+    inputValidationMiddleware,
+    async (req: Request, res: Response) => {
+        const createdPost = await blogsService.setPost(req.params.blogId, req.body);
+
+        if (!createdPost) {
+            res.send(CodeResponsesEnum.Not_found_404);
+        } else {
+            res.status(CodeResponsesEnum.Created_201).send(createdPost);
+        }
+    }
+);

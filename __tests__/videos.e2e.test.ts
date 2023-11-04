@@ -1,10 +1,10 @@
 import request from 'supertest';
 import { app } from '../src/app';
 import { CodeResponsesEnum } from '../src/types';
-import { VideoModel } from '../src/models/VideoModel';
+import { VideoOutputModel } from '../src/models/VideoOutputModel';
 
 describe('/videos', () => {
-    let newVideo: VideoModel | null = null;
+    let newVideo: VideoOutputModel | null = null;
 
     beforeAll(async () => {
         await request(app).delete('/testing/all-data').expect(CodeResponsesEnum.Not_content_204);

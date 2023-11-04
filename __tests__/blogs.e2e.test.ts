@@ -1,10 +1,10 @@
 import request from 'supertest';
 import { app } from '../src/app';
 import { CodeResponsesEnum } from '../src/types';
-import { BlogModel } from '../src/models/BlogModel';
+import { BlogOutputModel } from '../src/models/BlogOutputModel';
 
 describe('/blogs', () => {
-    let newBlog: BlogModel | null = null;
+    let newBlog: BlogOutputModel | null = null;
 
     beforeAll(async () => {
         await request(app).delete('/testing/all-data').expect(CodeResponsesEnum.Not_content_204);

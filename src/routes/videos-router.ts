@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import { CodeResponsesEnum } from '../types';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
-import { videosLocalRepository } from '../repositories/videos-repository';
+import { videosService } from '../domain/videos-service';
 
 export const videosRouter = Router({});
 
@@ -23,18 +23,18 @@ const availableResolutionsValidation = body('availableResolutions', 'available r
 });
 
 videosRouter.get('/', async (req: Request, res: Response) => {
-    const foundVideos = await videosLocalRepository.findVideos();
+    const foundVideos = await videosService.getVideos();
 
     res.send(foundVideos);
 });
 
 videosRouter.get('/:videoId', async (req: Request, res: Response) => {
-    const video = await videosLocalRepository.findVideo(+req.params.videoId);
+    const foundVideo = await videosService.getVideo(+req.params.videoId);
 
-    if (!video) {
+    if (!foundVideo) {
         res.send(CodeResponsesEnum.Not_found_404);
     } else {
-        res.send(video);
+        res.send(foundVideo);
     }
 });
 
@@ -47,9 +47,9 @@ videosRouter.post('/',
     availableResolutionsValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const newVideo = await videosLocalRepository.createVideo(req.body);
+        const createdVideo = await videosService.setVideo(req.body);
 
-        res.status(CodeResponsesEnum.Created_201).send(newVideo);
+        res.status(CodeResponsesEnum.Created_201).send(createdVideo);
     }
 );
 
@@ -62,7 +62,7 @@ videosRouter.put('/:videoId',
     availableResolutionsValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const updatedVideo = await videosLocalRepository.updateVideo(+req.params.videoId, req.body);
+        const updatedVideo = await videosService.editVideo(+req.params.videoId, req.body);
 
         if (!updatedVideo) {
             res.send(CodeResponsesEnum.Not_found_404);
@@ -73,7 +73,7 @@ videosRouter.put('/:videoId',
 );
 
 videosRouter.delete('/:videoId', async (req: Request, res: Response) => {
-    const deletedVideo = await videosLocalRepository.removeVideo(+req.params.videoId);
+    const deletedVideo = await videosService.deleteVideo(+req.params.videoId);
 
     if (!deletedVideo) {
         res.send(CodeResponsesEnum.Not_found_404);

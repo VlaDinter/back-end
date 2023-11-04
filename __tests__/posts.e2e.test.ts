@@ -1,13 +1,13 @@
 import request from 'supertest';
 import { app } from '../src/app';
 import { CodeResponsesEnum } from '../src/types';
-import { PostModel } from '../src/models/PostModel';
-import { BlogModel } from '../src/models/BlogModel';
+import { PostOutputModel } from '../src/models/PostOutputModel';
+import { BlogOutputModel } from '../src/models/BlogOutputModel';
 
 describe('/posts', () => {
-    let newPost: PostModel | null = null;
-    let blog: BlogModel | null = null;
-    let newBlog: BlogModel | null = null;
+    let newPost: PostOutputModel | null = null;
+    let blog: BlogOutputModel | null = null;
+    let newBlog: BlogOutputModel | null = null;
 
     beforeAll(async () => {
         await request(app).delete('/testing/all-data').expect(CodeResponsesEnum.Not_content_204);
