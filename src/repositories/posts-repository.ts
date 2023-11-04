@@ -2,10 +2,13 @@ import { postsCollection } from '../db/db';
 import { PostModel } from '../models/PostModel';
 import { DBPostModel } from '../models/DBPostModel';
 import { FiltersModel } from '../models/FiltersModel';
-import { FindCursor } from 'mongodb';
 
 export const postsLocalRepository = {
-    getPostsFilters(filters: FiltersModel): FindCursor {
+    async getPostsCount(): Promise<number> {
+        return await postsCollection.count();
+    },
+
+    async findPosts(filters: FiltersModel): Promise<DBPostModel[]> {
         const filter: { blogId?: string } = {};
         const skip = (filters.pageNumber - 1) * filters.pageSize;
         const sort = { [filters.sortBy]: filters.sortDirection };
@@ -14,15 +17,7 @@ export const postsLocalRepository = {
             filter.blogId = filters.blogId;
         }
 
-        return postsCollection.find(filter).sort(sort).skip(skip).limit(filters.pageSize);
-    },
-
-    async getPostsCount(filters: FiltersModel): Promise<number> {
-        return await this.getPostsFilters(filters).count();
-    },
-
-    async findPosts(filters: FiltersModel): Promise<DBPostModel[]> {
-        return await this.getPostsFilters(filters).toArray();
+        return postsCollection.find(filter).sort(sort).skip(skip).limit(filters.pageSize).toArray();
     },
 
     async findPost(id: string): Promise<DBPostModel | null> {
