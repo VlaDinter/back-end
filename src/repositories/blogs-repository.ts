@@ -2,22 +2,28 @@ import { blogsCollection } from '../db/db';
 import { DBBlogModel } from '../models/DBBlogModel';
 import { BlogModel } from '../models/BlogModel';
 import { FiltersModel } from '../models/FiltersModel';
+import { FindCursor } from 'mongodb';
 
 export const blogsLocalRepository = {
-    async getBlogsCount(): Promise<number> {
-        return await blogsCollection.count();
-    },
-
-    async findBlogs(filters: FiltersModel): Promise<DBBlogModel[]> {
+    getBlogsFilter(filters: FiltersModel): FindCursor {
         const filter: { name?: { $regex: string } } = {};
-        const skip = (filters.pageNumber - 1) * filters.pageSize;
-        const sort = { [filters.sortBy]: filters.sortDirection };
 
         if (filters.searchNameTerm) {
             filter.name = { $regex: filters.searchNameTerm };
         }
 
-        return blogsCollection.find(filter).sort(sort).skip(skip).limit(filters.pageSize).toArray();
+        return blogsCollection.find(filter);
+    },
+
+    async getBlogsCount(filters: FiltersModel): Promise<number> {
+        return await this.getBlogsFilter(filters).count();
+    },
+
+    async findBlogs(filters: FiltersModel): Promise<DBBlogModel[]> {
+        const skip = (filters.pageNumber - 1) * filters.pageSize;
+        const sort = { [filters.sortBy]: filters.sortDirection };
+
+        return this.getBlogsFilter(filters).sort(sort).skip(skip).limit(filters.pageSize).toArray();
     },
 
     async findBlog(id: string): Promise<DBBlogModel | null> {

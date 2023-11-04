@@ -31,7 +31,7 @@ export const blogsService = {
         };
 
         const result = await blogsLocalRepository.findBlogs(filters);
-        const blogsCount = await blogsLocalRepository.getBlogsCount();
+        const blogsCount = await blogsLocalRepository.getBlogsCount(filters);
 
         return {
             pagesCount: Math.ceil(blogsCount / filters.pageSize),

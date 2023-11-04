@@ -30,7 +30,7 @@ export const postsService = {
         };
 
         const result = await postsLocalRepository.findPosts(filters);
-        const postsCount = await postsLocalRepository.getPostsCount();
+        const postsCount = await postsLocalRepository.getPostsCount(filters);
 
         return {
             pagesCount: Math.ceil(postsCount / filters.pageSize),
