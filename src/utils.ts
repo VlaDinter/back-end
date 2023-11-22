@@ -1,5 +1,7 @@
 export const routerPaths = {
+    auth: '/auth',
     videos: '/videos',
     blogs: '/blogs',
-    posts: '/posts'
+    posts: '/posts',
+    users: '/users'
 };

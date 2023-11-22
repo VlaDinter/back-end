@@ -1,7 +1,7 @@
 import request from 'supertest';
-import { app } from '../src/app';
-import { CodeResponsesEnum } from '../src/types';
-import { BlogOutputModel } from '../src/models/BlogOutputModel';
+import { app } from '../../src/app';
+import { CodeResponsesEnum } from '../../src/types';
+import { BlogOutputModel } from '../../src/models/BlogOutputModel';
 
 describe('/blogs', () => {
     let newBlog: BlogOutputModel | null = null;

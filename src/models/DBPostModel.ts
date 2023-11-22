@@ -1,5 +1,4 @@
 export type DBPostModel = {
-    _id: string,
     id: string,
     title: string,
     shortDescription: string,

@@ -1,7 +1,7 @@
 import request from 'supertest';
-import { app } from '../src/app';
-import { CodeResponsesEnum } from '../src/types';
-import { VideoOutputModel } from '../src/models/VideoOutputModel';
+import { app } from '../../src/app';
+import { CodeResponsesEnum } from '../../src/types';
+import { VideoOutputModel } from '../../src/models/VideoOutputModel';
 
 describe('/videos', () => {
     let newVideo: VideoOutputModel | null = null;

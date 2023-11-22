@@ -1,8 +1,8 @@
 import request from 'supertest';
-import { app } from '../src/app';
-import { CodeResponsesEnum } from '../src/types';
-import { PostOutputModel } from '../src/models/PostOutputModel';
-import { BlogOutputModel } from '../src/models/BlogOutputModel';
+import { app } from '../../src/app';
+import { CodeResponsesEnum } from '../../src/types';
+import { PostOutputModel } from '../../src/models/PostOutputModel';
+import { BlogOutputModel } from '../../src/models/BlogOutputModel';
 
 describe('/posts', () => {
     let newPost: PostOutputModel | null = null;

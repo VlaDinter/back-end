@@ -1,14 +1,13 @@
 import { ParsedQs } from 'qs';
-import { PostModel } from '../models/PostModel';
 import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { DBPostModel } from '../models/DBPostModel';
 import { PostOutputModel } from '../models/PostOutputModel';
 import { postsLocalRepository } from '../repositories/posts-repository';
 import { SortDirectionModel } from '../models/SortDirectionModel';
-import { PageModel } from '../models/PageModel';
+import { PaginationModel } from '../models/PaginationModel';
 
 export const postsService = {
-    _mapDBPostToPostOutputModel(dbPost: DBPostModel): PostOutputModel {
+    _mapDBPostToPostOutputModel(dbPost: DBPostModel): DBPostModel {
         return {
             id: dbPost.id,
             title: dbPost.title,
@@ -20,7 +19,7 @@ export const postsService = {
         };
     },
 
-    async getPosts(queryParams: ParsedQs): Promise<PageModel<PostOutputModel>> {
+    async getPosts(queryParams: ParsedQs): Promise<PaginationModel<DBPostModel>> {
         const filters = {
             blogId: typeof queryParams.blogId === 'string' ? queryParams.blogId : null,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
@@ -41,13 +40,13 @@ export const postsService = {
         };
     },
 
-    async getPost(id: string): Promise<PostOutputModel | null> {
+    async getPost(id: string): Promise<DBPostModel | null> {
         const result = await postsLocalRepository.findPost(id);
 
         return result && this._mapDBPostToPostOutputModel(result);
     },
 
-    async setPost(newPost: PostModel): Promise<PostOutputModel> {
+    async setPost(newPost: PostOutputModel): Promise<DBPostModel> {
         const blog = await blogsLocalRepository.findBlog(newPost.blogId);
         const post = {
             id: `${+(new Date())}`,
@@ -59,12 +58,12 @@ export const postsService = {
             createdAt: new Date().toISOString()
         };
 
-        const result = await postsLocalRepository.createPost(post as DBPostModel);
+        const result = await postsLocalRepository.createPost(post);
 
         return this._mapDBPostToPostOutputModel(result);
     },
 
-    async editPost(id: string, newPost: PostModel): Promise<PostOutputModel | null> {
+    async editPost(id: string, newPost: PostOutputModel): Promise<DBPostModel | null> {
         const blog = await blogsLocalRepository.findBlog(newPost.blogId);
         const result = await postsLocalRepository.updatePost(id, {
             title: newPost.title,
@@ -77,7 +76,7 @@ export const postsService = {
         return result && this._mapDBPostToPostOutputModel(result);
     },
 
-    async deletePost(id: string): Promise<PostOutputModel | null> {
+    async deletePost(id: string): Promise<DBPostModel | null> {
         const result = await postsLocalRepository.removePost(id);
 
         return result && this._mapDBPostToPostOutputModel(result);

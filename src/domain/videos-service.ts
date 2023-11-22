@@ -1,10 +1,9 @@
-import { VideoModel } from '../models/VideoModel';
 import { VideoOutputModel } from '../models/VideoOutputModel';
 import { videosLocalRepository } from '../repositories/videos-repository';
 import { DBVideoModel } from '../models/DBVideoModel';
 
 export const videosService = {
-    _mapDBVideoToVideoOutputModel(dbVideo: DBVideoModel): VideoOutputModel {
+    _mapDBVideoToVideoOutputModel(dbVideo: DBVideoModel): DBVideoModel {
         return {
             id: dbVideo.id,
             title: dbVideo.title,
@@ -17,19 +16,19 @@ export const videosService = {
         };
     },
 
-    async getVideos(): Promise<VideoOutputModel[]> {
+    async getVideos(): Promise<DBVideoModel[]> {
         const result = await videosLocalRepository.findVideos();
 
         return result.map(this._mapDBVideoToVideoOutputModel);
     },
 
-    async getVideo(id: number): Promise<VideoOutputModel | null> {
+    async getVideo(id: number): Promise<DBVideoModel | null> {
         const result = await videosLocalRepository.findVideo(id);
 
         return result && this._mapDBVideoToVideoOutputModel(result);
     },
 
-    async setVideo(newVideo: VideoModel): Promise<VideoOutputModel> {
+    async setVideo(newVideo: VideoOutputModel): Promise<DBVideoModel> {
         const video = {
             id: +(new Date()),
             title: newVideo.title,
@@ -43,10 +42,10 @@ export const videosService = {
                 new Date(newVideo.publicationDate).toISOString()
         };
 
-        return await videosLocalRepository.createVideo(video as DBVideoModel);
+        return await videosLocalRepository.createVideo(video);
     },
 
-    async editVideo(id: number, newVideo: VideoModel): Promise<VideoOutputModel | null> {
+    async editVideo(id: number, newVideo: VideoOutputModel): Promise<DBVideoModel | null> {
         const result = await videosLocalRepository.updateVideo(id, {
             title: newVideo.title,
             author: newVideo.author,
@@ -59,7 +58,7 @@ export const videosService = {
         return result && this._mapDBVideoToVideoOutputModel(result);
     },
 
-    async deleteVideo(id: number): Promise<VideoOutputModel | null> {
+    async deleteVideo(id: number): Promise<DBVideoModel | null> {
         const result = await videosLocalRepository.removeVideo(id);
 
         return result && this._mapDBVideoToVideoOutputModel(result);

@@ -1,7 +1,6 @@
 import { AvailableResolutionsModel } from './AvailableResolutionsModel';
 
 export type DBVideoModel = {
-    _id: string,
     id?: number,
     title: string,
     author: string,
@@ -9,5 +8,5 @@ export type DBVideoModel = {
     minAgeRestriction?: number | null,
     createdAt?: string,
     publicationDate?: string,
-    availableResolutions?: Array<AvailableResolutionsModel> | null
+    availableResolutions?: AvailableResolutionsModel[] | null
 };

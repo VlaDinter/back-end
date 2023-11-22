@@ -1,6 +1,6 @@
 import { videosCollection } from '../db/db';
-import { VideoModel } from '../models/VideoModel';
 import { DBVideoModel } from '../models/DBVideoModel';
+import { VideoOutputModel } from '../models/VideoOutputModel';
 
 export const videosLocalRepository = {
     async findVideos(): Promise<DBVideoModel[]> {
@@ -17,7 +17,7 @@ export const videosLocalRepository = {
         return newVideo;
     },
 
-    async updateVideo(id: number, newVideo: VideoModel): Promise<DBVideoModel | null> {
+    async updateVideo(id: number, newVideo: VideoOutputModel): Promise<DBVideoModel | null> {
         return await videosCollection.findOneAndUpdate(
             { id },
             { $set: newVideo },

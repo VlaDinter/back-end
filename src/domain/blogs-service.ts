@@ -2,15 +2,14 @@ import { ParsedQs } from 'qs';
 import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { BlogOutputModel } from '../models/BlogOutputModel';
 import { DBBlogModel } from '../models/DBBlogModel';
-import { BlogModel } from '../models/BlogModel';
 import { SortDirectionModel } from '../models/SortDirectionModel';
-import { PageModel } from '../models/PageModel';
+import { PaginationModel } from '../models/PaginationModel';
 import { PostOutputModel } from '../models/PostOutputModel';
 import { postsService } from './posts-service';
-import { PostModel } from '../models/PostModel';
+import { DBPostModel } from '../models/DBPostModel';
 
 export const blogsService = {
-    _mapDBBlogToBlogOutputModel(dbBlog: DBBlogModel): BlogOutputModel {
+    _mapDBBlogToBlogOutputModel(dbBlog: DBBlogModel): DBBlogModel {
         return {
             id: dbBlog.id,
             name: dbBlog.name,
@@ -21,7 +20,7 @@ export const blogsService = {
         };
     },
 
-    async getBlogs(queryParams: ParsedQs): Promise<PageModel<BlogOutputModel>> {
+    async getBlogs(queryParams: ParsedQs): Promise<PaginationModel<DBBlogModel>> {
         const filters = {
             searchNameTerm: typeof queryParams.searchNameTerm === 'string' ? queryParams.searchNameTerm : null,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
@@ -42,13 +41,13 @@ export const blogsService = {
         };
     },
 
-    async getBlog(id: string): Promise<BlogOutputModel | null> {
+    async getBlog(id: string): Promise<DBBlogModel | null> {
         const result = await blogsLocalRepository.findBlog(id);
 
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async setBlog(newBlog: BlogModel): Promise<BlogOutputModel> {
+    async setBlog(newBlog: BlogOutputModel): Promise<DBBlogModel> {
         const blog = {
             id: `${+(new Date())}`,
             name: newBlog.name,
@@ -58,12 +57,12 @@ export const blogsService = {
             isMembership: false
         };
 
-        const result = await blogsLocalRepository.createBlog(blog as DBBlogModel);
+        const result = await blogsLocalRepository.createBlog(blog);
 
         return this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async editBlog(id: string, newBlog: BlogModel): Promise<BlogOutputModel | null> {
+    async editBlog(id: string, newBlog: BlogOutputModel): Promise<DBBlogModel | null> {
         const result = await blogsLocalRepository.updateBlog(id, {
             name: newBlog.name,
             description: newBlog.description,
@@ -73,17 +72,17 @@ export const blogsService = {
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async deleteBlog(id: string): Promise<BlogOutputModel | null> {
+    async deleteBlog(id: string): Promise<DBBlogModel | null> {
         const result = await blogsLocalRepository.removeBlog(id);
 
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async getPosts(blogId: string, queryParams: ParsedQs): Promise<PageModel<PostOutputModel> | null> {
+    async getPosts(blogId: string, queryParams: ParsedQs): Promise<PaginationModel<DBPostModel> | null> {
         return await this.getBlog(blogId) && await postsService.getPosts({ ...queryParams, blogId });
     },
 
-    async setPost(blogId: string, newPost: PostModel): Promise<PostOutputModel | null> {
+    async setPost(blogId: string, newPost: PostOutputModel): Promise<DBPostModel | null> {
         return await this.getBlog(blogId) && await postsService.setPost({ ...newPost, blogId });
     },
 

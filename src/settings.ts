@@ -3,6 +3,7 @@ import { CodeResponsesEnum } from './types';
 import { blogsService } from './domain/blogs-service';
 import { postsService } from './domain/posts-service';
 import { videosService } from './domain/videos-service';
+import { usersService } from './domain/users-service';
 
 export const getAppRouter = (app: Express) => {
     app.get('/', (req: Request, res: Response) => {
@@ -13,6 +14,7 @@ export const getAppRouter = (app: Express) => {
         await videosService.deleteAll();
         await blogsService.deleteAll();
         await postsService.deleteAll();
+        await usersService.deleteAll();
         res.sendStatus(CodeResponsesEnum.Not_content_204);
     });
 };

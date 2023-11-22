@@ -1,5 +1,4 @@
 export type DBBlogModel = {
-    _id: string,
     id: string,
     name: string,
     description: string,
