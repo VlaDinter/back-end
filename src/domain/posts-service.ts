@@ -5,6 +5,9 @@ import { PostOutputModel } from '../models/PostOutputModel';
 import { postsLocalRepository } from '../repositories/posts-repository';
 import { SortDirectionModel } from '../models/SortDirectionModel';
 import { PaginationModel } from '../models/PaginationModel';
+import { DBCommentModel } from '../models/DBCommentModel';
+import { commentsService } from './comments-service';
+import { CommentOutputModel } from '../models/CommentOutputModel';
 
 export const postsService = {
     _mapDBPostToPostOutputModel(dbPost: DBPostModel): DBPostModel {
@@ -19,9 +22,9 @@ export const postsService = {
         };
     },
 
-    async getPosts(queryParams: ParsedQs): Promise<PaginationModel<DBPostModel>> {
+    async getPosts(queryParams: ParsedQs, blogId?: string): Promise<PaginationModel<DBPostModel>> {
         const filters = {
-            blogId: typeof queryParams.blogId === 'string' ? queryParams.blogId : null,
+            blogId: blogId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
             sortDirection: queryParams.sortDirection === SortDirectionModel.ASC ? SortDirectionModel.ASC : SortDirectionModel.DESC,
             pageNumber: !isNaN(Number(queryParams.pageNumber)) ? Number(queryParams.pageNumber) : 1,
@@ -80,6 +83,14 @@ export const postsService = {
         const result = await postsLocalRepository.removePost(id);
 
         return result && this._mapDBPostToPostOutputModel(result);
+    },
+
+    async getComments(postId: string, queryParams: ParsedQs): Promise<PaginationModel<DBCommentModel> | null> {
+        return await this.getPost(postId) && await commentsService.getComments({ ...queryParams, postId });
+    },
+
+    async setComment(userId: string, postId: string, newComment: CommentOutputModel): Promise<DBCommentModel | null> {
+        return await this.getPost(postId) && await commentsService.setComment(userId, postId, newComment);
     },
 
     async deleteAll(): Promise<void> {

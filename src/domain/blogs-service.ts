@@ -79,7 +79,7 @@ export const blogsService = {
     },
 
     async getPosts(blogId: string, queryParams: ParsedQs): Promise<PaginationModel<DBPostModel> | null> {
-        return await this.getBlog(blogId) && await postsService.getPosts({ ...queryParams, blogId });
+        return await this.getBlog(blogId) && await postsService.getPosts(queryParams, blogId);
     },
 
     async setPost(blogId: string, newPost: PostOutputModel): Promise<DBPostModel | null> {

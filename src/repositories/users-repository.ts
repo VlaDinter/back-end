@@ -36,6 +36,10 @@ export const usersLocalRepository = {
         return await usersCollection.findOne({ $or: [{ email: loginOrEmail }, { login: loginOrEmail }] });
     },
 
+    async findUserById(id: string): Promise<DBUserModel | null> {
+        return await usersCollection.findOne({ id });
+    },
+
     async createUser(newUser: DBUserModel): Promise<DBUserModel> {
         const result = await usersCollection.insertOne(newUser);
 

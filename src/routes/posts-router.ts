@@ -5,6 +5,8 @@ import { authorizationMiddleware } from '../middlewares/authorization-middleware
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
 import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { postsService } from '../domain/posts-service';
+import { authMiddleware } from '../middlewares/auth-middleware';
+import { commentValidation } from './comments-router';
 
 export const postsRouter = Router({});
 
@@ -78,3 +80,28 @@ postsRouter.delete('/:postId', authorizationMiddleware, async (req: Request, res
         res.send(CodeResponsesEnum.Not_content_204);
     }
 });
+
+postsRouter.get('/:postId/comments', async (req: Request, res: Response) => {
+    const foundComments = await postsService.getComments(req.params.postId, req.query);
+
+    if (!foundComments) {
+        res.send(CodeResponsesEnum.Not_found_404);
+    } else {
+        res.send(foundComments);
+    }
+});
+
+postsRouter.post('/:postId/comments',
+    authMiddleware,
+    commentValidation,
+    inputValidationMiddleware,
+    async (req: Request, res: Response) => {
+        const createdComment = await postsService.setComment(req.userId as string, req.params.postId, req.body);
+
+        if (!createdComment) {
+            res.send(CodeResponsesEnum.Not_found_404);
+        } else {
+            res.status(CodeResponsesEnum.Created_201).send(createdComment);
+        }
+    }
+);

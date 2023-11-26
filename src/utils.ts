@@ -3,5 +3,6 @@ export const routerPaths = {
     videos: '/videos',
     blogs: '/blogs',
     posts: '/posts',
-    users: '/users'
+    users: '/users',
+    comments: '/comments'
 };

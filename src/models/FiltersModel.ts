@@ -1,7 +1,8 @@
 import { SortDirectionModel } from './SortDirectionModel';
 
 export type FiltersModel = {
-    blogId?: string | null,
+    postId?: string,
+    blogId?: string,
     searchNameTerm?: string | null,
     searchLoginTerm?: string | null,
     searchEmailTerm?: string | null,

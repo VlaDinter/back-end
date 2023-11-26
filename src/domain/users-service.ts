@@ -6,6 +6,7 @@ import { DBUserModel } from '../models/DBUserModel';
 import { UserOutputModel } from '../models/UserOutputModel';
 import bcrypt from 'bcrypt';
 import { LoginOutputModel } from '../models/LoginOutputModel';
+import { MeOutputModel } from '../models/MeOutputModel';
 
 export const usersService = {
     async _generateHash(password: string, salt: string) {
@@ -20,6 +21,14 @@ export const usersService = {
             login: dbUser.login,
             email: dbUser.email,
             createdAt: dbUser.createdAt
+        };
+    },
+
+    _mapDBUserToMeOutputModel(dbUser: DBUserModel): MeOutputModel {
+        return {
+            userId: dbUser.id,
+            email: dbUser.email,
+            login: dbUser.login,
         };
     },
 
@@ -45,6 +54,12 @@ export const usersService = {
         };
     },
 
+    async getUserById(id: string): Promise<MeOutputModel | null> {
+        const result = await usersLocalRepository.findUserById(id);
+
+        return result && this._mapDBUserToMeOutputModel(result);
+    },
+
     async setUser(newUser: UserOutputModel): Promise<DBUserModel> {
         const passwordSalt = await bcrypt.genSalt(10);
         const passwordHash = await this._generateHash(newUser.password, passwordSalt);
@@ -62,18 +77,18 @@ export const usersService = {
         return this._mapDBUserToUserOutputModel(result);
     },
 
-    async checkCredentials(credentials: LoginOutputModel): Promise<boolean> {
+    async checkCredentials(credentials: LoginOutputModel): Promise<DBUserModel | null> {
         const result = await usersLocalRepository.findByLoginOrEmail(credentials.loginOrEmail);
 
-        if (!result) return false;
+        if (!result || !result.passwordHash) return null;
 
-        const passwordHash = await this._generateHash(credentials.password, result.passwordSalt as string);
+        const checkedCredentials = await bcrypt.compare(credentials.password, result.passwordHash);
 
-        if (result.passwordHash !== passwordHash) {
-            return false;
+        if (!checkedCredentials) {
+            return null;
         }
 
-        return true;
+        return result && this._mapDBUserToUserOutputModel(result);
     },
 
     async deleteUser(id: string): Promise<DBUserModel | null> {
