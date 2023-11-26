@@ -7,7 +7,7 @@ import { authMiddleware } from '../middlewares/auth-middleware';
 
 export const commentsRouter = Router({});
 
-export const commentValidation = body('comment').isString().withMessage('comment is invalid').trim().notEmpty().withMessage('comment is required').isLength({ min: 20, max: 300 }).withMessage('comment is too long');
+export const commentValidation = body('content').isString().withMessage('content is invalid').trim().notEmpty().withMessage('content is required').isLength({ min: 20, max: 300 }).withMessage('content is too long');
 
 commentsRouter.get('/:id', async (req: Request, res: Response) => {
     const foundComment = await commentsService.getComment(req.params.id);
