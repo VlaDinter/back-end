@@ -6,6 +6,7 @@ import { blogsRouter } from './routes/blogs-router';
 import { postsRouter } from './routes/posts-router';
 import { usersRouter } from './routes/users-router';
 import { authRouter } from './routes/auth-router';
+import { commentsRouter } from './routes/comments-router';
 import { getAppRouter } from './features/app.router';
 
 export const app = express();
@@ -16,5 +17,5 @@ app.use(routerPaths.videos, videosRouter);
 app.use(routerPaths.blogs, blogsRouter);
 app.use(routerPaths.posts, postsRouter);
 app.use(routerPaths.users, usersRouter);
-app.use(routerPaths.comments, usersRouter);
+app.use(routerPaths.comments, commentsRouter);
 getAppRouter(app);
