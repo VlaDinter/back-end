@@ -7,6 +7,7 @@ import { UserOutputModel } from '../models/UserOutputModel';
 import bcrypt from 'bcrypt';
 import { LoginOutputModel } from '../models/LoginOutputModel';
 import { MeOutputModel } from '../models/MeOutputModel';
+import { EmailConfirmationModel } from '../models/EmailConfirmationModel';
 
 export const usersService = {
     async _generateHash(password: string, salt: string) {
@@ -29,6 +30,18 @@ export const usersService = {
             userId: dbUser.id,
             email: dbUser.email,
             login: dbUser.login,
+        };
+    },
+
+    _mapDBUserToDBUser(dbUser: DBUserModel): DBUserModel {
+        return {
+            id: dbUser.id,
+            login: dbUser.login,
+            email: dbUser.email,
+            passwordSalt: dbUser.passwordSalt,
+            passwordHash: dbUser.passwordHash,
+            createdAt: dbUser.passwordHash,
+            emailConfirmation: dbUser.emailConfirmation
         };
     },
 
@@ -60,7 +73,19 @@ export const usersService = {
         return result && this._mapDBUserToMeOutputModel(result);
     },
 
-    async setUser(newUser: UserOutputModel): Promise<DBUserModel> {
+    async getUserByConfirmationCode(emailConfirmationCode: string): Promise<DBUserModel | null> {
+        const result = await usersLocalRepository.findUserByConfirmationCode(emailConfirmationCode);
+
+        return result && this._mapDBUserToDBUser(result);
+    },
+
+    async getUserByLoginOrEmail(loginOrEmail: string): Promise<DBUserModel | null> {
+        const result = await usersLocalRepository.findByLoginOrEmail(loginOrEmail);
+
+        return result && this._mapDBUserToDBUser(result);
+    },
+
+    async setUser(newUser: UserOutputModel, emailConfirmation?: EmailConfirmationModel): Promise<DBUserModel> {
         const passwordSalt = await bcrypt.genSalt(10);
         const passwordHash = await this._generateHash(newUser.password, passwordSalt);
         const user = {
@@ -69,7 +94,8 @@ export const usersService = {
             email: newUser.email,
             passwordSalt,
             passwordHash,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            emailConfirmation
         };
 
         const result = await usersLocalRepository.createUser(user);
@@ -78,7 +104,7 @@ export const usersService = {
     },
 
     async checkCredentials(credentials: LoginOutputModel): Promise<DBUserModel | null> {
-        const result = await usersLocalRepository.findByLoginOrEmail(credentials.loginOrEmail);
+        const result = await this.getUserByLoginOrEmail(credentials.loginOrEmail);
 
         if (!result || !result.passwordHash) return null;
 

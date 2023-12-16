@@ -32,6 +32,10 @@ export const usersLocalRepository = {
         return await usersCollection.find(filter).sort(sort).skip(skip).limit(filters.pageSize).toArray();
     },
 
+    async findUserByConfirmationCode(emailConfirmationCode: string): Promise<DBUserModel | null> {
+        return await usersCollection.findOne({ ['emailConfirmation.confirmationCode']: emailConfirmationCode });
+    },
+
     async findByLoginOrEmail(loginOrEmail: string): Promise<DBUserModel | null> {
         return await usersCollection.findOne({ $or: [{ email: loginOrEmail }, { login: loginOrEmail }] });
     },
@@ -44,6 +48,14 @@ export const usersLocalRepository = {
         const result = await usersCollection.insertOne(newUser);
 
         return newUser;
+    },
+
+    async updateConfirmation(id: string): Promise<void> {
+        await usersCollection.updateOne({ id }, { $set: { 'emailConfirmation.isConfirmed': true } });
+    },
+
+    async updateExpirationDate(id: string, expirationDate: Date): Promise<void> {
+        await usersCollection.updateOne({ id }, { $set: { 'emailConfirmation.expirationDate': expirationDate } });
     },
 
     async removeUser(id: string): Promise<DBUserModel | null> {

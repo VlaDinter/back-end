@@ -7,9 +7,9 @@ import { usersService } from '../domain/users-service';
 
 export const usersRouter = Router({});
 
-const loginValidation = body('login').isString().withMessage('login is invalid').trim().notEmpty().withMessage('login is required').isLength({ min: 3, max: 10 }).withMessage('login is too long');
-const passwordValidation = body('password').isString().withMessage('password is invalid').trim().notEmpty().withMessage('password is required').isLength({ min: 6, max: 20 }).withMessage('password is too long');
-const emailValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required');
+export const loginValidation = body('login').isString().withMessage('login is invalid').trim().notEmpty().withMessage('login is required').isLength({ min: 3, max: 10 }).withMessage('login is too long');
+export const passwordValidation = body('password').isString().withMessage('password is invalid').trim().notEmpty().withMessage('password is required').isLength({ min: 6, max: 20 }).withMessage('password is too long');
+export const emailValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required');
 
 usersRouter.get('/', authorizationMiddleware, async (req: Request, res: Response) => {
     const foundUsers = await usersService.getUsers(req.query);

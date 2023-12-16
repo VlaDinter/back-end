@@ -1,3 +1,5 @@
+import { EmailConfirmationModel } from './EmailConfirmationModel';
+
 export type DBUserModel = {
     id: string,
     login: string,
@@ -5,4 +7,5 @@ export type DBUserModel = {
     passwordSalt?: string,
     passwordHash?: string,
     createdAt?: string
+    emailConfirmation?: EmailConfirmationModel;
 };
