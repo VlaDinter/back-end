@@ -15,9 +15,9 @@ const passwordValidation = body('password').isString().withMessage('password is 
 const codeValidation = body('code').isString().withMessage('code is invalid').trim().notEmpty().withMessage('code is required').custom(async code => {
     const user = await usersService.getUserByConfirmationCode(code);
 
-    if (!user) return 'code is incorrect';
-    if (user.emailConfirmation!.isConfirmed) return 'code is already been applied';
-    if (user.emailConfirmation!.expirationDate < new Date()) return 'code is expired';
+    if (!user) throw new Error('code is incorrect');
+    if (user.emailConfirmation!.isConfirmed) throw new Error('code is already been applied');
+    if (user.emailConfirmation!.expirationDate < new Date()) throw new Error('code is expired');
 
     return true;
 });
@@ -25,8 +25,8 @@ const codeValidation = body('code').isString().withMessage('code is invalid').tr
 const emailValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required').custom(async email => {
     const user = await usersService.getUserByLoginOrEmail(email);
 
-    if (!user) return 'email is incorrect';
-    if (user.emailConfirmation!.isConfirmed) return 'email is already confirmed';
+    if (!user) throw new Error('email is incorrect');
+    if (user.emailConfirmation!.isConfirmed) throw new Error('email is already confirmed');
 
     return true;
 });
