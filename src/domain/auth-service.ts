@@ -35,11 +35,16 @@ export const authService = {
 
     async resendingEmail(email: string): Promise<void> {
         const user = await usersService.getUserByLoginOrEmail(email);
-
-        await businessService.doOperation(user!);
-        await usersLocalRepository.updateEmailConfirmation(user!.id, uuidv4(), add(new Date(), {
+        const confirmationCode = uuidv4();
+        const expirationDate = add(new Date(), {
             hours: 1,
             minutes: 30
-        }));
+        });
+
+        user!.emailConfirmation!.confirmationCode = confirmationCode;
+        user!.emailConfirmation!.expirationDate = expirationDate;
+
+        await businessService.doOperation(user!);
+        await usersLocalRepository.updateEmailConfirmation(user!.id, confirmationCode, expirationDate);
     }
 };
