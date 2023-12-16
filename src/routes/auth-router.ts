@@ -5,7 +5,7 @@ import { inputValidationMiddleware } from '../middlewares/input-validation-middl
 import { usersService } from '../domain/users-service';
 import { jwtService } from '../application/jwt-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
-import { emailValidation as userEmailValidation, loginValidation, passwordValidation as userPasswordValidation } from './users-router';
+import { passwordValidation as userPasswordValidation } from './users-router';
 import { authService } from '../domain/auth-service';
 
 export const authRouter = Router({});
@@ -27,6 +27,22 @@ const emailValidation = body('email').isEmail().withMessage('email is invalid').
 
     if (!user) throw new Error('email is incorrect');
     if (user.emailConfirmation!.isConfirmed) throw new Error('email is already confirmed');
+
+    return true;
+});
+
+export const loginValidation = body('login').isString().withMessage('login is invalid').trim().notEmpty().withMessage('login is required').isLength({ min: 3, max: 10 }).withMessage('login is too long').custom(async login => {
+    const user = await usersService.getUserByLoginOrEmail(login);
+
+    if (user) throw new Error('login is already exist');
+
+    return true;
+});
+
+export const userEmailValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required').custom(async email => {
+    const user = await usersService.getUserByLoginOrEmail(email);
+
+    if (user) throw new Error('email is already exist');
 
     return true;
 });
