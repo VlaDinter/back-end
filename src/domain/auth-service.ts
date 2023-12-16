@@ -37,7 +37,7 @@ export const authService = {
         const user = await usersService.getUserByLoginOrEmail(email);
 
         await businessService.doOperation(user!);
-        await usersLocalRepository.updateExpirationDate(user!.id, add(new Date(), {
+        await usersLocalRepository.updateEmailConfirmation(user!.id, uuidv4(), add(new Date(), {
             hours: 1,
             minutes: 30
         }));
