@@ -6,7 +6,16 @@ export const emailManager = {
         await emailAdapter.sendEmail(user.email, 'Email confirmation', `
             <h1>Thank for your registration</h1>
             <p>To finish registration please follow the link below:
-                <a href='https://somesite.com/confirm-email?code=${user.emailConfirmation!.confirmationCode}'>complete registration(${user.emailConfirmation!.confirmationCode})</a>
+                <a href='https://somesite.com/confirm-email?code=${user.emailConfirmation!.confirmationCode}'>complete registration</a>
+            </p>
+        `);
+    },
+
+    async resendingEmailConfirmationMessage(user: DBUserModel) {
+        await emailAdapter.sendEmail(user.email, 'Resending email confirmation', `
+            <h1>Thank for your registration</h1>
+            <p>To finish registration please follow the link below:
+                <a href='https://somesite.com/confirm-email?code=${user.emailConfirmation!.confirmationCode}'>complete registration</a>
             </p>
         `);
     }

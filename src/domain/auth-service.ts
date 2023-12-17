@@ -4,7 +4,7 @@ import { UserOutputModel } from '../models/UserOutputModel';
 import { DBUserModel } from '../models/DBUserModel';
 import { usersService } from './users-service';
 import { usersLocalRepository } from '../repositories/users-repository';
-import { businessService } from './business-service';
+import { emailManager } from '../managers/email-manager';
 
 export const authService = {
     async setUser(newUser: UserOutputModel): Promise<DBUserModel> {
@@ -19,7 +19,7 @@ export const authService = {
 
         const createResult = await usersService.setUser(newUser, emailConfirmation);
 
-        await businessService.doOperation({
+        await emailManager.sendEmailConfirmationMessage({
             ...createResult,
             emailConfirmation
         });
@@ -36,6 +36,6 @@ export const authService = {
     async resendingEmail(email: string): Promise<void> {
         const user = await usersService.getUserByLoginOrEmail(email);
 
-        await businessService.doOperation(user!);
+        await emailManager.resendingEmailConfirmationMessage(user!);
     }
 };
