@@ -36,6 +36,12 @@ export const authService = {
     async resendingEmail(email: string): Promise<void> {
         const user = await usersService.getUserByLoginOrEmail(email);
 
+        user!.emailConfirmation!.confirmationCode = uuidv4();
+        user!.emailConfirmation!.expirationDate = add(new Date(), {
+            hours: 1,
+            minutes: 30
+        });
+
         await emailManager.resendingEmailConfirmationMessage(user!);
     }
 };
