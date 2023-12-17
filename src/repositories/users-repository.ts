@@ -54,6 +54,10 @@ export const usersLocalRepository = {
         await usersCollection.updateOne({ id }, { $set: { 'emailConfirmation.isConfirmed': true } });
     },
 
+    async updateEmailConfirmation(id: string, confirmationCode: string, expirationDate: Date): Promise<void> {
+        await usersCollection.updateOne({ id }, { $set: { 'emailConfirmation.confirmationCode': confirmationCode, 'emailConfirmation.expirationDate': expirationDate } });
+    },
+
     async removeUser(id: string): Promise<DBUserModel | null> {
         return await usersCollection.findOneAndDelete({ id });
     },
