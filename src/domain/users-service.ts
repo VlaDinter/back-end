@@ -102,7 +102,8 @@ export const usersService = {
             passwordSalt,
             passwordHash,
             createdAt: new Date().toISOString(),
-            emailConfirmation
+            emailConfirmation,
+            refreshTokens: []
         };
 
         const result = await usersLocalRepository.createUser(user);

@@ -22,7 +22,7 @@ export const refreshTokenMiddleware = async (req: Request, res: Response, next: 
 
     const user = await usersService.getUserById(userId);
 
-    if (!user || user.refreshTokens?.includes(token)) {
+    if (!user || user.refreshTokens!.includes(token)) {
         res.send(CodeResponsesEnum.Unauthorized_401);
 
         return;
