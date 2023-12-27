@@ -58,6 +58,10 @@ export const usersLocalRepository = {
         await usersCollection.updateOne({ id }, { $set: { 'emailConfirmation.confirmationCode': confirmationCode, 'emailConfirmation.expirationDate': expirationDate } });
     },
 
+    async updateRefreshTokens(id: string, refreshToken: string): Promise<void> {
+        await usersCollection.updateOne({ id }, { $push: { '$.refreshTokens': refreshToken } });
+    },
+
     async removeUser(id: string): Promise<DBUserModel | null> {
         return await usersCollection.findOneAndDelete({ id });
     },

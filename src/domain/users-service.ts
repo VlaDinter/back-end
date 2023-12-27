@@ -41,7 +41,8 @@ export const usersService = {
             passwordSalt: dbUser.passwordSalt,
             passwordHash: dbUser.passwordHash,
             createdAt: dbUser.passwordHash,
-            emailConfirmation: dbUser.emailConfirmation
+            emailConfirmation: dbUser.emailConfirmation,
+            refreshTokens: dbUser.refreshTokens
         };
     },
 
@@ -67,7 +68,13 @@ export const usersService = {
         };
     },
 
-    async getUserById(id: string): Promise<MeOutputModel | null> {
+    async getUserById(id: string): Promise<DBUserModel | null> {
+        const result = await usersLocalRepository.findUserById(id);
+
+        return result && this._mapDBUserToDBUser(result);
+    },
+
+    async getMeById(id: string): Promise<MeOutputModel | null> {
         const result = await usersLocalRepository.findUserById(id);
 
         return result && this._mapDBUserToMeOutputModel(result);

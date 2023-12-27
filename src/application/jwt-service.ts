@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken';
-import { DBUserModel } from '../models/DBUserModel';
 import { MeOutputModel } from '../models/MeOutputModel';
 import { settings } from '../settings';
 
 export const jwtService = {
-    async createJWT(user: DBUserModel): Promise<string> {
-        const token = jwt.sign({ userId: user.id }, settings.JWT_SECRET, { expiresIn: '1h' });
+    async createJWT(userId: string, expiresIn: string): Promise<string> {
+        const token = jwt.sign({ userId }, settings.JWT_SECRET, { expiresIn });
 
         return token;
     },

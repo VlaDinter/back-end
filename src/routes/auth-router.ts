@@ -7,6 +7,7 @@ import { jwtService } from '../application/jwt-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
 import { loginValidation, emailValidation as userEmailValidation, passwordValidation as userPasswordValidation } from './users-router';
 import { authService } from '../domain/auth-service';
+import { refreshTokenMiddleware } from '../middlewares/refresh-token-middleware';
 
 export const authRouter = Router({});
 
@@ -34,7 +35,7 @@ const emailValidation = body('email').isEmail().withMessage('email is invalid').
 authRouter.get('/me',
     authMiddleware,
     async (req: Request, res: Response) => {
-        const user = await usersService.getUserById(req.userId as string);
+        const user = await usersService.getMeById(req.userId!);
 
         res.send(user);
     }
@@ -50,9 +51,11 @@ authRouter.post('/login',
         if (!user) {
             res.send(CodeResponsesEnum.Unauthorized_401);
         } else {
-            const token = await jwtService.createJWT(user);
+            const accessToken = await jwtService.createJWT(user!.id, '10s');
+            const refreshToken = await jwtService.createJWT(user!.id, '20s');
 
-            res.send({ accessToken: token });
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+            res.send({ accessToken });
         }
     }
 );
@@ -84,6 +87,32 @@ authRouter.post('/registration-email-resending',
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
         await authService.resendingEmail(req.body.email);
+
+        res.send(CodeResponsesEnum.Not_content_204);
+    }
+);
+
+authRouter.post('/refresh-token',
+    refreshTokenMiddleware,
+    async (req: Request, res: Response) => {
+        const token = req.cookies.refreshToken;
+
+        await authService.setRefreshToken(req.userId!, token);
+
+        const accessToken = await jwtService.createJWT(req.userId!, '10s');
+        const refreshToken = await jwtService.createJWT(req.userId!, '20s');
+
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+        res.send({ accessToken });
+    }
+);
+
+authRouter.post('/logout',
+    refreshTokenMiddleware,
+    async (req: Request, res: Response) => {
+        const token = req.cookies.refreshToken;
+
+        await authService.setRefreshToken(req.userId!, token);
 
         res.send(CodeResponsesEnum.Not_content_204);
     }

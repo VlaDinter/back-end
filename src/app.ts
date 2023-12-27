@@ -1,5 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import { routerPaths } from './utils';
 import { videosRouter } from './routes/videos-router';
 import { blogsRouter } from './routes/blogs-router';
@@ -12,6 +13,7 @@ import { getAppRouter } from './features/app.router';
 export const app = express();
 
 app.use(bodyParser({}));
+app.use(cookieParser());
 app.use(routerPaths.auth, authRouter);
 app.use(routerPaths.videos, videosRouter);
 app.use(routerPaths.blogs, blogsRouter);

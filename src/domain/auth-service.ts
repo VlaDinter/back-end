@@ -27,6 +27,10 @@ export const authService = {
         return createResult;
     },
 
+    async setRefreshToken(id: string, refreshToken: string): Promise<void> {
+        await usersLocalRepository.updateRefreshTokens(id, refreshToken);
+    },
+
     async confirmEmail(code: string): Promise<void> {
         const user = await usersService.getUserByConfirmationCode(code);
 
