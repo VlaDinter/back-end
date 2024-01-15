@@ -1,19 +1,18 @@
 import jwt from 'jsonwebtoken';
-import { MeOutputModel } from '../models/MeOutputModel';
 import { settings } from '../settings';
 
 export const jwtService = {
-    async createJWT(userId: string, expiresIn: string): Promise<string> {
-        const token = jwt.sign({ userId }, settings.JWT_SECRET, { expiresIn });
+    async createJWT(payload: { [key: string]: string }, expiresIn: string): Promise<string> {
+        const token = jwt.sign(payload, settings.JWT_SECRET, { expiresIn });
 
         return token;
     },
 
-    async getUserIdByToken(token: string): Promise<string | null> {
+    async getResultByToken(token: string): Promise<{ [key: string]: string } | null> {
         try {
-            const result = jwt.verify(token, settings.JWT_SECRET) as MeOutputModel;
+            const result = jwt.verify(token, settings.JWT_SECRET);
 
-            return result.userId;
+            return result as { [key: string]: string };
         } catch (error) {
             return null;
         }

@@ -27,10 +27,6 @@ export const authService = {
         return createResult;
     },
 
-    async setRefreshToken(id: string, refreshToken: string): Promise<void> {
-        await usersLocalRepository.updateRefreshTokens(id, refreshToken);
-    },
-
     async confirmEmail(code: string): Promise<void> {
         const user = await usersService.getUserByConfirmationCode(code);
 
@@ -48,7 +44,7 @@ export const authService = {
         user!.emailConfirmation!.confirmationCode = confirmationCode;
         user!.emailConfirmation!.expirationDate = expirationDate;
 
-        await emailManager.resendingEmailConfirmationMessage(user!);
+        await emailManager.sendEmailConfirmationMessage(user!);
         await usersLocalRepository.updateEmailConfirmation(user!.id, confirmationCode, expirationDate);
     }
 };

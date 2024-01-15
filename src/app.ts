@@ -8,7 +8,7 @@ import { postsRouter } from './routes/posts-router';
 import { usersRouter } from './routes/users-router';
 import { authRouter } from './routes/auth-router';
 import { commentsRouter } from './routes/comments-router';
-import { getAppRouter } from './features/app.router';
+import { initApp } from './features/init-app';
 
 export const app = express();
 
@@ -20,4 +20,4 @@ app.use(routerPaths.blogs, blogsRouter);
 app.use(routerPaths.posts, postsRouter);
 app.use(routerPaths.users, usersRouter);
 app.use(routerPaths.comments, commentsRouter);
-getAppRouter(app);
+initApp(app);

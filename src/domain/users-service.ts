@@ -33,7 +33,7 @@ export const usersService = {
         };
     },
 
-    _mapDBUserToDBUser(dbUser: DBUserModel): DBUserModel {
+    _mapDBUserToDBUserModel(dbUser: DBUserModel): DBUserModel {
         return {
             id: dbUser.id,
             login: dbUser.login,
@@ -41,8 +41,7 @@ export const usersService = {
             passwordSalt: dbUser.passwordSalt,
             passwordHash: dbUser.passwordHash,
             createdAt: dbUser.passwordHash,
-            emailConfirmation: dbUser.emailConfirmation,
-            refreshTokens: dbUser.refreshTokens
+            emailConfirmation: dbUser.emailConfirmation
         };
     },
 
@@ -71,7 +70,7 @@ export const usersService = {
     async getUserById(id: string): Promise<DBUserModel | null> {
         const result = await usersLocalRepository.findUserById(id);
 
-        return result && this._mapDBUserToDBUser(result);
+        return result && this._mapDBUserToDBUserModel(result);
     },
 
     async getMeById(id: string): Promise<MeOutputModel | null> {
@@ -83,13 +82,13 @@ export const usersService = {
     async getUserByConfirmationCode(emailConfirmationCode: string): Promise<DBUserModel | null> {
         const result = await usersLocalRepository.findUserByConfirmationCode(emailConfirmationCode);
 
-        return result && this._mapDBUserToDBUser(result);
+        return result && this._mapDBUserToDBUserModel(result);
     },
 
     async getUserByLoginOrEmail(loginOrEmail: string): Promise<DBUserModel | null> {
         const result = await usersLocalRepository.findByLoginOrEmail(loginOrEmail);
 
-        return result && this._mapDBUserToDBUser(result);
+        return result && this._mapDBUserToDBUserModel(result);
     },
 
     async setUser(newUser: UserOutputModel, emailConfirmation?: EmailConfirmationModel): Promise<DBUserModel> {
@@ -102,8 +101,7 @@ export const usersService = {
             passwordSalt,
             passwordHash,
             createdAt: new Date().toISOString(),
-            emailConfirmation,
-            refreshTokens: []
+            emailConfirmation
         };
 
         const result = await usersLocalRepository.createUser(user);

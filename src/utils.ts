@@ -4,5 +4,6 @@ export const routerPaths = {
     blogs: '/blogs',
     posts: '/posts',
     users: '/users',
-    comments: '/comments'
+    comments: '/comments',
+    securityDevices: '/security/devices'
 };

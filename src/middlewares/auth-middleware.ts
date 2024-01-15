@@ -11,15 +11,15 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
 
     const token = req.headers.authorization.split(' ')[1];
-    const userId = await jwtService.getUserIdByToken(token);
+    const result = await jwtService.getResultByToken(token);
 
-    if (!userId) {
+    if (!result?.userId) {
         res.send(CodeResponsesEnum.Unauthorized_401);
 
         return;
     }
 
-    const user = await usersService.getUserById(userId);
+    const user = await usersService.getUserById(result.userId);
 
     if (!user) {
         res.send(CodeResponsesEnum.Unauthorized_401);
@@ -27,6 +27,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         return;
     }
 
-    req.userId = userId;
+    req.userId = result.userId;
     next();
 };

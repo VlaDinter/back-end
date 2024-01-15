@@ -42,7 +42,9 @@ export const videosService = {
                 new Date(newVideo.publicationDate).toISOString()
         };
 
-        return await videosLocalRepository.createVideo(video);
+        const result = await videosLocalRepository.createVideo(video);
+
+        return this._mapDBVideoToVideoOutputModel(result);
     },
 
     async editVideo(id: number, newVideo: VideoOutputModel): Promise<DBVideoModel | null> {

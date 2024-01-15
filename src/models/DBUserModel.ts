@@ -7,6 +7,5 @@ export type DBUserModel = {
     passwordSalt?: string,
     passwordHash?: string,
     createdAt?: string,
-    refreshTokens?: string[],
     emailConfirmation?: EmailConfirmationModel
 };

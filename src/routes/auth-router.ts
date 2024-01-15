@@ -8,6 +8,8 @@ import { authMiddleware } from '../middlewares/auth-middleware';
 import { loginValidation, emailValidation as userEmailValidation, passwordValidation as userPasswordValidation } from './users-router';
 import { authService } from '../domain/auth-service';
 import { refreshTokenMiddleware } from '../middlewares/refresh-token-middleware';
+import { devicesService } from '../domain/devices-service';
+import { requestsMiddleware } from '../middlewares/requests-middleware';
 
 export const authRouter = Router({});
 
@@ -32,16 +34,14 @@ const emailValidation = body('email').isEmail().withMessage('email is invalid').
     return true;
 });
 
-authRouter.get('/me',
-    authMiddleware,
-    async (req: Request, res: Response) => {
-        const user = await usersService.getMeById(req.userId!);
+authRouter.get('/me', authMiddleware, async (req: Request, res: Response) => {
+    const user = await usersService.getMeById(req.userId!);
 
-        res.send(user);
-    }
-);
+    res.send(user);
+});
 
 authRouter.post('/login',
+    requestsMiddleware,
     loginOrEmailValidation,
     passwordValidation,
     inputValidationMiddleware,
@@ -51,8 +51,14 @@ authRouter.post('/login',
         if (!user) {
             res.send(CodeResponsesEnum.Unauthorized_401);
         } else {
-            const accessToken = await jwtService.createJWT(user!.id, '10s');
-            const refreshToken = await jwtService.createJWT(user!.id, '20s');
+            const ip = req.ip!;
+            const title = req.headers['user-agent'] || 'device';
+            const device = await devicesService.setDevice(user.id, ip, title);
+            const accessToken = await jwtService.createJWT({ userId: user.id }, '10s');
+            const refreshToken = await jwtService.createJWT(
+                { userId: user.id, deviceId: device.deviceId, lastActiveDate: device.lastActiveDate },
+                '20s'
+            );
 
             res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
             res.send({ accessToken });
@@ -61,6 +67,7 @@ authRouter.post('/login',
 );
 
 authRouter.post('/registration',
+    requestsMiddleware,
     loginValidation,
     userEmailValidation,
     userPasswordValidation,
@@ -73,6 +80,7 @@ authRouter.post('/registration',
 );
 
 authRouter.post('/registration-confirmation',
+    requestsMiddleware,
     codeValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
@@ -83,6 +91,7 @@ authRouter.post('/registration-confirmation',
 );
 
 authRouter.post('/registration-email-resending',
+    requestsMiddleware,
     emailValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
@@ -92,28 +101,20 @@ authRouter.post('/registration-email-resending',
     }
 );
 
-authRouter.post('/refresh-token',
-    refreshTokenMiddleware,
-    async (req: Request, res: Response) => {
-        const token = req.cookies.refreshToken;
+authRouter.post('/refresh-token', refreshTokenMiddleware, async (req: Request, res: Response) => {
+    const updatedDevice = await devicesService.editDevice(req.deviceId!, req.ip!);
+    const accessToken = await jwtService.createJWT({ userId: req.userId! }, '10s');
+    const refreshToken = await jwtService.createJWT(
+        { userId: req.userId!, deviceId: req.deviceId!, lastActiveDate: updatedDevice!.lastActiveDate },
+        '20s'
+    );
 
-        await authService.setRefreshToken(req.userId!, token);
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+    res.send({ accessToken });
+});
 
-        const accessToken = await jwtService.createJWT(req.userId!, '10s');
-        const refreshToken = await jwtService.createJWT(req.userId!, '20s');
+authRouter.post('/logout', refreshTokenMiddleware, async (req: Request, res: Response) => {
+    await devicesService.deleteDevice(req.deviceId!);
 
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
-        res.send({ accessToken });
-    }
-);
-
-authRouter.post('/logout',
-    refreshTokenMiddleware,
-    async (req: Request, res: Response) => {
-        const token = req.cookies.refreshToken;
-
-        await authService.setRefreshToken(req.userId!, token);
-
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
-);
+    res.send(CodeResponsesEnum.Not_content_204);
+});
