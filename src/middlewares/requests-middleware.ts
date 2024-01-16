@@ -10,7 +10,7 @@ export const requestsMiddleware = async (req: Request, res: Response, next: Next
     await requestsService.setRequest(ip, url);
     await requestsService.deleteRequests();
 
-    if (requests.length > 5) {
+    if (requests.length >= 5) {
         res.send(CodeResponsesEnum.Too_many_requests_429);
     } else {
         next();
