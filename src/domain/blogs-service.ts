@@ -52,9 +52,7 @@ export const blogsService = {
             id: `${+(new Date())}`,
             name: newBlog.name,
             description: newBlog.description,
-            websiteUrl: newBlog.websiteUrl,
-            createdAt: new Date().toISOString(),
-            isMembership: false
+            websiteUrl: newBlog.websiteUrl
         };
 
         const result = await blogsLocalRepository.createBlog(blog);

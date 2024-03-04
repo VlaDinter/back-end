@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
 import { settings } from '../settings';
 
-const dbName = 'back-end';
-const mongoURI = settings.MONGO_URI + '/' + dbName;
+const mongoURI = settings.MONGO_URI;
 
 export async function runDb() {
     try {
