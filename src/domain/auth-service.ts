@@ -52,7 +52,7 @@ export const authService = {
                 minutes: 30
             });
 
-            await emailManager.sendPasswordRecoveryMessage(user.email, confirmationCode);
+            await emailManager.sendEmailConfirmationMessage(user.email, confirmationCode);
             await usersLocalRepository.updateEmailConfirmation(user.id, confirmationCode, expirationDate);
         }
     },
