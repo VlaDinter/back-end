@@ -6,5 +6,5 @@ export type DBUserType = {
     email: string,
     passwordHash?: string,
     createdAt?: string,
-    emailConfirmation?: EmailConfirmationType
+    emailConfirmation?: EmailConfirmationType | null
 };

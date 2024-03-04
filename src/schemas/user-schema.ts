@@ -7,9 +7,12 @@ export const UserSchema = new mongoose.Schema<DBUserType>({
     email: { type: String, require: true },
     passwordHash: String,
     emailConfirmation: {
-        confirmationCode: { type: String, require: true },
-        expirationDate: { type: Date, require: true },
-        isConfirmed: { type: Boolean, require: true }
+        default: null,
+        type: {
+            confirmationCode: { type: String, require: true },
+            expirationDate: { type: Date, require: true },
+            isConfirmed: { type: Boolean, require: true }
+        }
     },
 
     createdAt: {
