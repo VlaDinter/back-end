@@ -1,4 +1,4 @@
-export type DBBlogModel = {
+export type DBBlogType = {
     id: string,
     name: string,
     description: string,

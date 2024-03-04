@@ -1,13 +1,13 @@
 import { ParsedQs } from 'qs';
-import { SortDirectionModel } from '../models/SortDirectionModel';
-import { PaginationModel } from '../models/PaginationModel';
+import { SortDirectionType } from '../types/SortDirectionType';
+import { PaginationType } from '../types/PaginationType';
 import { commentsLocalRepository } from '../repositories/comments-repository';
-import { DBCommentModel } from '../models/DBCommentModel';
-import { CommentOutputModel } from '../models/CommentOutputModel';
+import { DBCommentType } from '../types/DBCommentType';
+import { CommentOutputType } from '../types/CommentOutputType';
 import { usersService } from './users-service';
 
 export const commentsService = {
-    _mapDBCommentToCommentOutputModel(dbBlog: DBCommentModel): DBCommentModel {
+    _mapDBCommentToCommentOutputModel(dbBlog: DBCommentType): DBCommentType {
         return {
             id: dbBlog.id,
             content: dbBlog.content,
@@ -16,17 +16,17 @@ export const commentsService = {
         };
     },
 
-    async getComments(queryParams: ParsedQs): Promise<PaginationModel<DBCommentModel>> {
+    async getComments(postId: string, queryParams: ParsedQs): Promise<PaginationType<DBCommentType>> {
         const filters = {
-            postId: queryParams.postId as string,
+            postId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
-            sortDirection: queryParams.sortDirection === SortDirectionModel.ASC ? SortDirectionModel.ASC : SortDirectionModel.DESC,
+            sortDirection: queryParams.sortDirection === SortDirectionType.ASC ? SortDirectionType.ASC : SortDirectionType.DESC,
             pageNumber: !isNaN(Number(queryParams.pageNumber)) ? Number(queryParams.pageNumber) : 1,
             pageSize: !isNaN(Number(queryParams.pageSize)) ? Number(queryParams.pageSize) : 10
         };
 
         const result = await commentsLocalRepository.findComments(filters);
-        const commentsCount = await commentsLocalRepository.getCommentsCount(filters);
+        const commentsCount = await commentsLocalRepository.findUsersCount(filters);
 
         return {
             pagesCount: Math.ceil(commentsCount / filters.pageSize),
@@ -37,19 +37,18 @@ export const commentsService = {
         };
     },
 
-    async getComment(id: string): Promise<DBCommentModel | null> {
+    async getComment(id: string): Promise<DBCommentType | null> {
         const result = await commentsLocalRepository.findComment(id);
 
         return result && this._mapDBCommentToCommentOutputModel(result);
     },
 
-    async setComment(userId: string, postId: string, newComment: CommentOutputModel): Promise<DBCommentModel> {
+    async setComment(userId: string, postId: string, newComment: CommentOutputType): Promise<DBCommentType> {
         const user = await usersService.getUserById(userId);
         const comment = {
             id: `${+(new Date())}`,
             postId,
             content: newComment.content,
-            createdAt: new Date().toISOString(),
             commentatorInfo: {
                 userId,
                 userLogin: user!.login
@@ -61,7 +60,7 @@ export const commentsService = {
         return this._mapDBCommentToCommentOutputModel(result);
     },
 
-    async editComment(id: string, newComment: CommentOutputModel): Promise<void> {
+    async editComment(id: string, newComment: CommentOutputType): Promise<void> {
         await commentsLocalRepository.updateComment(id, {
             content: newComment.content
         });

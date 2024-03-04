@@ -3,6 +3,8 @@ import { body } from 'express-validator';
 import { CodeResponsesEnum } from '../types';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
 import { videosService } from '../domain/videos-service';
+import { AvailableResolutionType } from '../types/AvailableResolutionType';
+import { AvailableResolutionsType } from '../types/AvailableResolutionsType';
 
 export const videosRouter = Router({});
 
@@ -12,8 +14,18 @@ const canBeDownloadedValidation = body('canBeDownloaded', 'can be downloaded is 
 const minAgeRestrictionValidation = body('minAgeRestriction', 'min age restriction is invalid').optional({ nullable: true }).not().isString().not().isArray().isInt({ min: 1, max: 18 });
 const publicationDateValidation = body('publicationDate', 'publication date is invalid').optional().not().isArray().isISO8601();
 const availableResolutionsValidation = body('availableResolutions', 'available resolutions is invalid').optional({ nullable: true }).isArray().custom(value => {
-    const validValues = ['P144', 'P240', 'P360', 'P480', 'P720', 'P1080', 'P1440', 'P2160'];
-    const isInvalid = value.some((item: string) => !validValues.includes(item));
+    const validValues = [
+        AvailableResolutionType.P144,
+        AvailableResolutionType.P240,
+        AvailableResolutionType.P360,
+        AvailableResolutionType.P480,
+        AvailableResolutionType.P720,
+        AvailableResolutionType.P1080,
+        AvailableResolutionType.P1440,
+        AvailableResolutionType.P2160
+    ];
+
+    const isInvalid = value.some((item: AvailableResolutionsType) => !validValues.includes(item));
 
     if (isInvalid || !value.length) {
         return false;

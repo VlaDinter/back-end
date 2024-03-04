@@ -1,13 +1,13 @@
 import { ParsedQs } from 'qs';
-import { SortDirectionModel } from '../models/SortDirectionModel';
-import { PaginationModel } from '../models/PaginationModel';
-import { usersLocalRepository } from '../repositories/users-repository';
-import { DBUserModel } from '../models/DBUserModel';
-import { UserOutputModel } from '../models/UserOutputModel';
 import bcrypt from 'bcrypt';
-import { LoginOutputModel } from '../models/LoginOutputModel';
-import { MeOutputModel } from '../models/MeOutputModel';
-import { EmailConfirmationModel } from '../models/EmailConfirmationModel';
+import { SortDirectionType } from '../types/SortDirectionType';
+import { PaginationType } from '../types/PaginationType';
+import { usersLocalRepository } from '../repositories/users-repository';
+import { DBUserType } from '../types/DBUserType';
+import { UserOutputType } from '../types/UserOutputType';
+import { LoginOutputType } from '../types/LoginOutputType';
+import { MeOutputType } from '../types/MeOutputType';
+import { EmailConfirmationType } from '../types/EmailConfirmationType';
 
 export const usersService = {
     async _generateHash(password: string, salt: string) {
@@ -16,7 +16,7 @@ export const usersService = {
         return hash;
     },
 
-    _mapDBUserToUserOutputModel(dbUser: DBUserModel): DBUserModel {
+    _mapDBUserToUserOutputModel(dbUser: DBUserType): DBUserType {
         return {
             id: dbUser.id,
             login: dbUser.login,
@@ -25,7 +25,7 @@ export const usersService = {
         };
     },
 
-    _mapDBUserToMeOutputModel(dbUser: DBUserModel): MeOutputModel {
+    _mapDBUserToMeOutputModel(dbUser: DBUserType): MeOutputType {
         return {
             userId: dbUser.id,
             email: dbUser.email,
@@ -33,30 +33,29 @@ export const usersService = {
         };
     },
 
-    _mapDBUserToDBUserModel(dbUser: DBUserModel): DBUserModel {
+    _mapDBUserToDBUserModel(dbUser: DBUserType): DBUserType {
         return {
             id: dbUser.id,
             login: dbUser.login,
             email: dbUser.email,
-            passwordSalt: dbUser.passwordSalt,
             passwordHash: dbUser.passwordHash,
             createdAt: dbUser.passwordHash,
             emailConfirmation: dbUser.emailConfirmation
         };
     },
 
-    async getUsers(queryParams: ParsedQs): Promise<PaginationModel<DBUserModel>> {
+    async getUsers(queryParams: ParsedQs): Promise<PaginationType<DBUserType>> {
         const filters = {
             searchLoginTerm: typeof queryParams.searchLoginTerm === 'string' ? queryParams.searchLoginTerm : null,
             searchEmailTerm: typeof queryParams.searchEmailTerm === 'string' ? queryParams.searchEmailTerm : null,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
-            sortDirection: queryParams.sortDirection === SortDirectionModel.ASC ? SortDirectionModel.ASC : SortDirectionModel.DESC,
+            sortDirection: queryParams.sortDirection === SortDirectionType.ASC ? SortDirectionType.ASC : SortDirectionType.DESC,
             pageNumber: !isNaN(Number(queryParams.pageNumber)) ? Number(queryParams.pageNumber) : 1,
             pageSize: !isNaN(Number(queryParams.pageSize)) ? Number(queryParams.pageSize) : 10
         };
 
         const result = await usersLocalRepository.findUsers(filters);
-        const postsCount = await usersLocalRepository.getUsersCount(filters);
+        const postsCount = await usersLocalRepository.findUsersCount(filters);
 
         return {
             pagesCount: Math.ceil(postsCount / filters.pageSize),
@@ -67,40 +66,38 @@ export const usersService = {
         };
     },
 
-    async getUserById(id: string): Promise<DBUserModel | null> {
+    async getUserById(id: string): Promise<DBUserType | null> {
         const result = await usersLocalRepository.findUserById(id);
 
         return result && this._mapDBUserToDBUserModel(result);
     },
 
-    async getMeById(id: string): Promise<MeOutputModel | null> {
+    async getMeById(id: string): Promise<MeOutputType | null> {
         const result = await usersLocalRepository.findUserById(id);
 
         return result && this._mapDBUserToMeOutputModel(result);
     },
 
-    async getUserByConfirmationCode(emailConfirmationCode: string): Promise<DBUserModel | null> {
+    async getUserByConfirmationCode(emailConfirmationCode: string): Promise<DBUserType | null> {
         const result = await usersLocalRepository.findUserByConfirmationCode(emailConfirmationCode);
 
         return result && this._mapDBUserToDBUserModel(result);
     },
 
-    async getUserByLoginOrEmail(loginOrEmail: string): Promise<DBUserModel | null> {
+    async getUserByLoginOrEmail(loginOrEmail: string): Promise<DBUserType | null> {
         const result = await usersLocalRepository.findByLoginOrEmail(loginOrEmail);
 
         return result && this._mapDBUserToDBUserModel(result);
     },
 
-    async setUser(newUser: UserOutputModel, emailConfirmation?: EmailConfirmationModel): Promise<DBUserModel> {
+    async setUser(newUser: UserOutputType, emailConfirmation?: EmailConfirmationType): Promise<DBUserType> {
         const passwordSalt = await bcrypt.genSalt(10);
         const passwordHash = await this._generateHash(newUser.password, passwordSalt);
         const user = {
             id: `${+(new Date())}`,
             login: newUser.login,
             email: newUser.email,
-            passwordSalt,
             passwordHash,
-            createdAt: new Date().toISOString(),
             emailConfirmation
         };
 
@@ -109,21 +106,30 @@ export const usersService = {
         return this._mapDBUserToUserOutputModel(result);
     },
 
-    async checkCredentials(credentials: LoginOutputModel): Promise<DBUserModel | null> {
+    async checkCredentials(credentials: LoginOutputType): Promise<DBUserType | null> {
         const result = await this.getUserByLoginOrEmail(credentials.loginOrEmail);
 
         if (!result || !result.passwordHash) return null;
 
+        const isConfirmed = !result.emailConfirmation || result.emailConfirmation.isConfirmed;
+
+        if (!isConfirmed) return null;
+
         const checkedCredentials = await bcrypt.compare(credentials.password, result.passwordHash);
 
-        if (!checkedCredentials) {
-            return null;
-        }
+        if (!checkedCredentials) return null;
 
         return result && this._mapDBUserToUserOutputModel(result);
     },
 
-    async deleteUser(id: string): Promise<DBUserModel | null> {
+    async editPassword(id: string, newPassword: string): Promise<void> {
+        const passwordSalt = await bcrypt.genSalt(10);
+        const passwordHash = await this._generateHash(newPassword, passwordSalt);
+
+        await usersLocalRepository.updatePassword(id, passwordHash);
+    },
+
+    async deleteUser(id: string): Promise<DBUserType | null> {
         const result = await usersLocalRepository.removeUser(id);
 
         return result && this._mapDBUserToUserOutputModel(result);

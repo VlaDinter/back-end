@@ -1,9 +1,9 @@
 import add from 'date-fns/add';
 import { requestsLocalRepository } from '../repositories/requests-repository';
-import { DBRequestModel } from '../models/DBRequestModel';
+import { DBRequestType } from '../types/DBRequestType';
 
 export const requestsService = {
-    _mapDBRequestToDBRequestModel(dbRequest: DBRequestModel): DBRequestModel {
+    _mapDBRequestToDBRequestModel(dbRequest: DBRequestType): DBRequestType {
         return {
             ip: dbRequest.ip,
             date: dbRequest.date,
@@ -11,14 +11,14 @@ export const requestsService = {
         };
     },
 
-    async getRequests(ip: string, url: string): Promise<DBRequestModel[]> {
+    async getRequests(ip: string, url: string): Promise<DBRequestType[]> {
         const date = add(new Date(), { seconds: -10 });
         const result = await requestsLocalRepository.findRequests(ip, url, date);
 
         return result.map(this._mapDBRequestToDBRequestModel);
     },
 
-    async setRequest(ip: string, url: string): Promise<DBRequestModel> {
+    async setRequest(ip: string, url: string): Promise<DBRequestType> {
         const request = {
             ip,
             url,

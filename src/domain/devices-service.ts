@@ -1,10 +1,10 @@
 import add from 'date-fns/add';
-import { DBDeviceModel } from '../models/DBDeviceModel';
-import { DeviceOutputModel } from '../models/DeviceOutputModel';
+import { DBDeviceType } from '../types/DBDeviceType';
+import { DeviceOutputType } from '../types/DeviceOutputType';
 import { devicesLocalRepository } from '../repositories/devices-repository';
 
 export const devicesService = {
-    _mapDBDeviceToDeviceOutputModel(dbDevice: DBDeviceModel): DeviceOutputModel {
+    _mapDBDeviceToDeviceOutputModel(dbDevice: DBDeviceType): DeviceOutputType {
         return {
             ip: dbDevice.ip,
             title: dbDevice.title,
@@ -13,7 +13,7 @@ export const devicesService = {
         };
     },
 
-    _mapDBDeviceToDBDeviceModel(dbDevice: DBDeviceModel): DBDeviceModel {
+    _mapDBDeviceToDBDeviceModel(dbDevice: DBDeviceType): DBDeviceType {
         return {
             ip: dbDevice.ip,
             title: dbDevice.title,
@@ -24,19 +24,19 @@ export const devicesService = {
         };
     },
 
-    async getDevices(userId: string): Promise<DeviceOutputModel[]> {
+    async getDevices(userId: string): Promise<DeviceOutputType[]> {
         const result = await devicesLocalRepository.findDevices(userId);
 
         return result.map(this._mapDBDeviceToDeviceOutputModel);
     },
 
-    async getDevice(id: string): Promise<DBDeviceModel | null> {
+    async getDevice(id: string): Promise<DBDeviceType | null> {
         const result = await devicesLocalRepository.findDevice(id);
 
         return result && this._mapDBDeviceToDBDeviceModel(result);
     },
 
-    async setDevice(userId: string, ip: string, title: string): Promise<DeviceOutputModel> {
+    async setDevice(userId: string, ip: string, title: string): Promise<DeviceOutputType> {
         const device = {
             userId,
             ip,
@@ -54,14 +54,14 @@ export const devicesService = {
         return this._mapDBDeviceToDeviceOutputModel(result);
     },
 
-    async editDevice(id: string, ip: string): Promise<DeviceOutputModel | null> {
+    async editDevice(id: string, ip: string): Promise<DeviceOutputType | null> {
         const lastActiveDate = new Date().toISOString();
         const result = await devicesLocalRepository.updateDevice(id, ip, lastActiveDate);
 
         return result && this._mapDBDeviceToDeviceOutputModel(result);
     },
 
-    async deleteDevice(id: string): Promise<DeviceOutputModel | null> {
+    async deleteDevice(id: string): Promise<DeviceOutputType | null> {
         const result = await devicesLocalRepository.removeDevice(id);
 
         return result && this._mapDBDeviceToDeviceOutputModel(result);

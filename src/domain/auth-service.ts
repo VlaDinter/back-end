@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import add from 'date-fns/add';
-import { UserOutputModel } from '../models/UserOutputModel';
-import { DBUserModel } from '../models/DBUserModel';
+import { UserOutputType } from '../types/UserOutputType';
+import { DBUserType } from '../types/DBUserType';
 import { usersService } from './users-service';
 import { usersLocalRepository } from '../repositories/users-repository';
 import { emailManager } from '../managers/email-manager';
 
 export const authService = {
-    async setUser(newUser: UserOutputModel): Promise<DBUserModel> {
+    async setUser(newUser: UserOutputType): Promise<DBUserType> {
         const emailConfirmation = {
             confirmationCode: uuidv4(),
             isConfirmed: false,
@@ -19,10 +19,7 @@ export const authService = {
 
         const createResult = await usersService.setUser(newUser, emailConfirmation);
 
-        await emailManager.sendEmailConfirmationMessage({
-            ...createResult,
-            emailConfirmation
-        });
+        await emailManager.sendEmailConfirmationMessage(createResult.email, emailConfirmation.confirmationCode);
 
         return createResult;
     },
@@ -41,10 +38,28 @@ export const authService = {
             minutes: 30
         });
 
-        user!.emailConfirmation!.confirmationCode = confirmationCode;
-        user!.emailConfirmation!.expirationDate = expirationDate;
-
-        await emailManager.sendEmailConfirmationMessage(user!);
+        await emailManager.sendEmailConfirmationMessage(user!.email, confirmationCode);
         await usersLocalRepository.updateEmailConfirmation(user!.id, confirmationCode, expirationDate);
+    },
+
+    async passwordRecovery(email: string): Promise<void> {
+        const user = await usersService.getUserByLoginOrEmail(email);
+
+        if (user) {
+            const confirmationCode = uuidv4();
+            const expirationDate = add(new Date(), {
+                hours: 1,
+                minutes: 30
+            });
+
+            await emailManager.sendPasswordRecoveryMessage(user.email, confirmationCode);
+            await usersLocalRepository.updateEmailConfirmation(user.id, confirmationCode, expirationDate);
+        }
+    },
+
+    async setNewPassword(recoveryCode: string, newPassword: string): Promise<void> {
+        const user = await usersService.getUserByConfirmationCode(recoveryCode);
+
+        await usersService.editPassword(user!.id, newPassword);
     }
 };

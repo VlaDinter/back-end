@@ -1,4 +1,4 @@
-export type CommentatorInfoModel = {
+export type CommentatorInfoType = {
     userId: string,
     userLogin: string
 };

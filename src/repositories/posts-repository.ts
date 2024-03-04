@@ -1,57 +1,77 @@
-import { postsCollection } from '../db/db';
-import { DBPostModel } from '../models/DBPostModel';
-import { FiltersModel } from '../models/FiltersModel';
-import { Filter } from 'mongodb';
-import { PostOutputModel } from '../models/PostOutputModel';
+import { Query } from 'mongoose';
+import { DBPostType } from '../types/DBPostType';
+import { FiltersType } from '../types/FiltersType';
+import { PostOutputType } from '../types/PostOutputType';
+import { PostModel } from '../models/post-model';
 
 export const postsLocalRepository = {
-    getPostsFilter(filters: FiltersModel): Filter<DBPostModel> {
-        const filter: Filter<DBPostModel> = {};
+    findPostsQuery(filters: FiltersType): Query<DBPostType[], DBPostType> {
+        const query = PostModel.find({}, { _id: 0 });
 
         if (filters.blogId) {
-            filter.blogId = filters.blogId;
+            query.where({ blogId: filters.blogId });
         }
 
-        return filter;
+        return query;
     },
 
-    async getPostsCount(filters: FiltersModel): Promise<number> {
-        const filter = this.getPostsFilter(filters);
-
-        return await postsCollection.find(filter).count();
+    async getPostsCount(filters: FiltersType): Promise<number> {
+        return this.findPostsQuery(filters).countDocuments().lean();
     },
 
-    async findPosts(filters: FiltersModel): Promise<DBPostModel[]> {
+    async findPosts(filters: FiltersType): Promise<DBPostType[]> {
         const skip = (filters.pageNumber - 1) * filters.pageSize;
         const sort = { [filters.sortBy]: filters.sortDirection };
-        const filter = this.getPostsFilter(filters);
 
-        return await postsCollection.find(filter).sort(sort).skip(skip).limit(filters.pageSize).toArray();
+        return this.findPostsQuery(filters).sort(sort).skip(skip).limit(filters.pageSize).lean();
     },
 
-    async findPost(id: string): Promise<DBPostModel | null> {
-        return await postsCollection.findOne({ id });
+    async findPost(id: string): Promise<DBPostType | null> {
+        return PostModel.findOne({ id }, { _id: 0 });
     },
 
-    async createPost(newPost: DBPostModel): Promise<DBPostModel> {
-        const result = await postsCollection.insertOne(newPost);
+    async createPost(newPost: DBPostType): Promise<DBPostType> {
+        const postInstance = new PostModel();
 
-        return newPost;
+        postInstance.id = newPost.id;
+        postInstance.title = newPost.title;
+        postInstance.shortDescription = newPost.shortDescription;
+        postInstance.content = newPost.content;
+        postInstance.blogId = newPost.blogId;
+        postInstance.blogName = newPost.blogName;
+
+        await postInstance.save();
+
+        return postInstance;
     },
 
-    async updatePost(id: string, newPost: PostOutputModel): Promise<DBPostModel | null> {
-        return await postsCollection.findOneAndUpdate(
-            { id },
-            { $set: newPost },
-        { returnDocument: 'after' }
-        );
+    async updatePost(id: string, newPost: PostOutputType): Promise<DBPostType | null> {
+        const postInstance = await PostModel.findOne({ id });
+
+        if (!postInstance) return null;
+
+        postInstance.title = newPost.title;
+        postInstance.shortDescription = newPost.shortDescription;
+        postInstance.content = newPost.content;
+        postInstance.blogId = newPost.blogId;
+        postInstance.blogName = newPost.blogName;
+
+        const result = await postInstance.save();
+
+        return result;
     },
 
-    async removePost(id: string): Promise<DBPostModel | null> {
-        return await postsCollection.findOneAndDelete({ id });
+    async removePost(id: string): Promise<DBPostType | null> {
+        const postInstance = await PostModel.findOne({ id });
+
+        if (!postInstance) return null;
+
+        await postInstance.deleteOne();
+
+        return postInstance;
     },
 
     async removeAll(): Promise<void> {
-        await postsCollection.deleteMany({});
+        await PostModel.deleteMany({});
     }
 };

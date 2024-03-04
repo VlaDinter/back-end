@@ -1,4 +1,4 @@
-export type PaginationModel<T> = {
+export type PaginationType<T> = {
     pagesCount: number,
     page: number,
     pageSize: number,

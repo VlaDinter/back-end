@@ -1,4 +1,4 @@
-export type DeviceOutputModel = {
+export type DeviceOutputType = {
     ip: string,
     title: string,
     lastActiveDate: string,

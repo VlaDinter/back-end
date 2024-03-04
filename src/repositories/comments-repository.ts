@@ -1,56 +1,67 @@
-import { commentsCollection } from '../db/db';
-import { FiltersModel } from '../models/FiltersModel';
-import { Filter } from 'mongodb';
-import { DBCommentModel } from '../models/DBCommentModel';
-import { CommentOutputModel } from '../models/CommentOutputModel';
+import { Query } from 'mongoose';
+import { FiltersType } from '../types/FiltersType';
+import { DBCommentType } from '../types/DBCommentType';
+import { CommentOutputType } from '../types/CommentOutputType';
+import { CommentModel } from '../models/comment-model';
 
 export const commentsLocalRepository = {
-    getCommentsFilter(filters: FiltersModel): Filter<DBCommentModel> {
-        const filter: Filter<DBCommentModel> = {};
+    findCommentsQuery(filters: FiltersType): Query<DBCommentType[], DBCommentType> {
+        const query = CommentModel.find({}, { _id: 0 });
 
         if (filters.postId) {
-            filter.postId = filters.postId;
+            query.where({ postId: filters.postId });
         }
 
-        return filter;
+        return query;
     },
 
-    async getCommentsCount(filters: FiltersModel): Promise<number> {
-        const filter = this.getCommentsFilter(filters);
-
-        return await commentsCollection.find(filter).count();
+    async findUsersCount(filters: FiltersType): Promise<number> {
+        return this.findCommentsQuery(filters).countDocuments().lean();
     },
 
-    async findComments(filters: FiltersModel): Promise<DBCommentModel[]> {
+    async findComments(filters: FiltersType): Promise<DBCommentType[]> {
         const skip = (filters.pageNumber - 1) * filters.pageSize;
         const sort = { [filters.sortBy]: filters.sortDirection };
-        const filter = this.getCommentsFilter(filters);
 
-        return await commentsCollection.find(filter).sort(sort).skip(skip).limit(filters.pageSize).toArray();
+        return this.findCommentsQuery(filters).sort(sort).skip(skip).limit(filters.pageSize).lean();
     },
 
-    async findComment(id: string): Promise<DBCommentModel | null> {
-        return await commentsCollection.findOne({ id });
+    async findComment(id: string): Promise<DBCommentType | null> {
+        return CommentModel.findOne({ id }, { _id: 0 }).lean();
     },
 
-    async createComment(newComment: DBCommentModel): Promise<DBCommentModel> {
-        const result = await commentsCollection.insertOne(newComment);
+    async createComment(newComment: DBCommentType): Promise<DBCommentType> {
+        const commentInstance = new CommentModel();
 
-        return newComment;
+        commentInstance.id = newComment.id;
+        commentInstance.postId = newComment.postId;
+        commentInstance.content = newComment.content;
+        commentInstance.commentatorInfo = newComment.commentatorInfo;
+
+        await commentInstance.save();
+
+        return commentInstance;
     },
 
-    async updateComment(id: string, newComment: CommentOutputModel): Promise<void> {
-        await commentsCollection.updateOne(
-            { id },
-            { $set: newComment }
-        );
+    async updateComment(id: string, newComment: CommentOutputType): Promise<void> {
+        const commentInstance = await CommentModel.findOne({ id });
+
+        if (commentInstance) {
+            commentInstance.content = newComment.content;
+
+            await commentInstance.save();
+        }
     },
 
     async removeComment(id: string): Promise<void> {
-        await commentsCollection.deleteOne({ id });
+        const commentInstance = await CommentModel.findOne({ id });
+
+        if (commentInstance) {
+            await commentInstance.deleteOne();
+        }
     },
 
     async removeAll(): Promise<void> {
-        await commentsCollection.deleteMany({});
+        await CommentModel.deleteMany({});
     }
 };

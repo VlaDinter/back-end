@@ -1,16 +1,16 @@
 import { ParsedQs } from 'qs';
 import { blogsLocalRepository } from '../repositories/blogs-repository';
-import { DBPostModel } from '../models/DBPostModel';
-import { PostOutputModel } from '../models/PostOutputModel';
+import { DBPostType } from '../types/DBPostType';
+import { PostOutputType } from '../types/PostOutputType';
 import { postsLocalRepository } from '../repositories/posts-repository';
-import { SortDirectionModel } from '../models/SortDirectionModel';
-import { PaginationModel } from '../models/PaginationModel';
-import { DBCommentModel } from '../models/DBCommentModel';
+import { SortDirectionType } from '../types/SortDirectionType';
+import { PaginationType } from '../types/PaginationType';
+import { DBCommentType } from '../types/DBCommentType';
 import { commentsService } from './comments-service';
-import { CommentOutputModel } from '../models/CommentOutputModel';
+import { CommentOutputType } from '../types/CommentOutputType';
 
 export const postsService = {
-    _mapDBPostToPostOutputModel(dbPost: DBPostModel): DBPostModel {
+    _mapDBPostToPostOutputModel(dbPost: DBPostType): DBPostType {
         return {
             id: dbPost.id,
             title: dbPost.title,
@@ -22,11 +22,11 @@ export const postsService = {
         };
     },
 
-    async getPosts(queryParams: ParsedQs, blogId?: string): Promise<PaginationModel<DBPostModel>> {
+    async getPosts(queryParams: ParsedQs, blogId?: string): Promise<PaginationType<DBPostType>> {
         const filters = {
             blogId: blogId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
-            sortDirection: queryParams.sortDirection === SortDirectionModel.ASC ? SortDirectionModel.ASC : SortDirectionModel.DESC,
+            sortDirection: queryParams.sortDirection === SortDirectionType.ASC ? SortDirectionType.ASC : SortDirectionType.DESC,
             pageNumber: !isNaN(Number(queryParams.pageNumber)) ? Number(queryParams.pageNumber) : 1,
             pageSize: !isNaN(Number(queryParams.pageSize)) ? Number(queryParams.pageSize) : 10
         };
@@ -43,13 +43,13 @@ export const postsService = {
         };
     },
 
-    async getPost(id: string): Promise<DBPostModel | null> {
+    async getPost(id: string): Promise<DBPostType | null> {
         const result = await postsLocalRepository.findPost(id);
 
         return result && this._mapDBPostToPostOutputModel(result);
     },
 
-    async setPost(newPost: PostOutputModel): Promise<DBPostModel> {
+    async setPost(newPost: PostOutputType): Promise<DBPostType> {
         const blog = await blogsLocalRepository.findBlog(newPost.blogId);
         const post = {
             id: `${+(new Date())}`,
@@ -57,8 +57,7 @@ export const postsService = {
             shortDescription: newPost.shortDescription,
             content: newPost.content,
             blogId: newPost.blogId,
-            blogName: blog!.name,
-            createdAt: new Date().toISOString()
+            blogName: blog!.name
         };
 
         const result = await postsLocalRepository.createPost(post);
@@ -66,7 +65,7 @@ export const postsService = {
         return this._mapDBPostToPostOutputModel(result);
     },
 
-    async editPost(id: string, newPost: PostOutputModel): Promise<DBPostModel | null> {
+    async editPost(id: string, newPost: PostOutputType): Promise<DBPostType | null> {
         const blog = await blogsLocalRepository.findBlog(newPost.blogId);
         const result = await postsLocalRepository.updatePost(id, {
             title: newPost.title,
@@ -79,17 +78,17 @@ export const postsService = {
         return result && this._mapDBPostToPostOutputModel(result);
     },
 
-    async deletePost(id: string): Promise<DBPostModel | null> {
+    async deletePost(id: string): Promise<DBPostType | null> {
         const result = await postsLocalRepository.removePost(id);
 
         return result && this._mapDBPostToPostOutputModel(result);
     },
 
-    async getComments(postId: string, queryParams: ParsedQs): Promise<PaginationModel<DBCommentModel> | null> {
-        return await this.getPost(postId) && await commentsService.getComments({ ...queryParams, postId });
+    async getComments(postId: string, queryParams: ParsedQs): Promise<PaginationType<DBCommentType> | null> {
+        return await this.getPost(postId) && await commentsService.getComments(postId, queryParams);
     },
 
-    async setComment(userId: string, postId: string, newComment: CommentOutputModel): Promise<DBCommentModel | null> {
+    async setComment(userId: string, postId: string, newComment: CommentOutputType): Promise<DBCommentType | null> {
         return await this.getPost(postId) && await commentsService.setComment(userId, postId, newComment);
     },
 

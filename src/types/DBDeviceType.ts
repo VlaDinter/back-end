@@ -1,4 +1,4 @@
-export type DBDeviceModel = {
+export type DBDeviceType = {
     ip: string,
     title: string,
     lastActiveDate: string,

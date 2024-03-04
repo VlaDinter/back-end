@@ -15,6 +15,8 @@ export const authRouter = Router({});
 
 const loginOrEmailValidation = body('loginOrEmail').isString().withMessage('login or email is invalid').trim().notEmpty().withMessage('login or email is required');
 const passwordValidation = body('password').isString().withMessage('password is invalid').trim().notEmpty().withMessage('password is required');
+const newPasswordValidation = body('newPassword').isString().withMessage('new password is invalid').trim().notEmpty().withMessage('new password is required').isLength({ min: 6, max: 20 }).withMessage('new password is too long');
+const emailValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required');
 const codeValidation = body('code').isString().withMessage('code is invalid').trim().notEmpty().withMessage('code is required').custom(async code => {
     const user = await usersService.getUserByConfirmationCode(code);
 
@@ -25,7 +27,16 @@ const codeValidation = body('code').isString().withMessage('code is invalid').tr
     return true;
 });
 
-const emailValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required').custom(async email => {
+const recoveryCodeValidation = body('recoveryCode').isString().withMessage('recovery code is invalid').trim().notEmpty().withMessage('recovery code is required').custom(async recoveryCode => {
+    const user = await usersService.getUserByConfirmationCode(recoveryCode);
+
+    if (!user?.emailConfirmation) throw new Error('recovery code is incorrect');
+    if (user.emailConfirmation.expirationDate < new Date()) throw new Error('recovery code is expired');
+
+    return true;
+});
+
+const emailConfirmationValidation = body('email').isEmail().withMessage('email is invalid').trim().notEmpty().withMessage('email is required').custom(async email => {
     const user = await usersService.getUserByLoginOrEmail(email);
 
     if (!user?.emailConfirmation) throw new Error('email is incorrect');
@@ -92,7 +103,7 @@ authRouter.post('/registration-confirmation',
 
 authRouter.post('/registration-email-resending',
     requestsMiddleware,
-    emailValidation,
+    emailConfirmationValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
         await authService.resendingEmail(req.body.email);
@@ -118,3 +129,26 @@ authRouter.post('/logout', refreshTokenMiddleware, async (req: Request, res: Res
 
     res.send(CodeResponsesEnum.Not_content_204);
 });
+
+authRouter.post('/password-recovery',
+    requestsMiddleware,
+    emailValidation,
+    inputValidationMiddleware,
+    async (req: Request, res: Response) => {
+        await authService.passwordRecovery(req.body.email);
+
+        res.send(CodeResponsesEnum.Not_content_204);
+    }
+);
+
+authRouter.post('/new-password',
+    requestsMiddleware,
+    newPasswordValidation,
+    recoveryCodeValidation,
+    inputValidationMiddleware,
+    async (req: Request, res: Response) => {
+        await authService.setNewPassword(req.body.recoveryCode, req.body.newPassword);
+
+        res.send(CodeResponsesEnum.Not_content_204);
+    }
+);

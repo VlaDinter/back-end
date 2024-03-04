@@ -22,4 +22,5 @@ app.use(routerPaths.posts, postsRouter);
 app.use(routerPaths.users, usersRouter);
 app.use(routerPaths.comments, commentsRouter);
 app.use(routerPaths.securityDevices, devicesRouter);
+app.set('trust proxy', true);
 initApp(app);

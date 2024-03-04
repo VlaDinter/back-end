@@ -1,13 +1,13 @@
-import { SortDirectionModel } from './SortDirectionModel';
+import { SortDirectionType } from './SortDirectionType';
 
-export type FiltersModel = {
+export type FiltersType = {
     postId?: string,
     blogId?: string,
     searchNameTerm?: string | null,
     searchLoginTerm?: string | null,
     searchEmailTerm?: string | null,
     sortBy: string,
-    sortDirection: SortDirectionModel.ASC | SortDirectionModel.DESC,
+    sortDirection: SortDirectionType.ASC | SortDirectionType.DESC,
     pageNumber: number,
     pageSize: number
 };

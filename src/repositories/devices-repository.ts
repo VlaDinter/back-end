@@ -1,38 +1,58 @@
-import { devicesCollection } from '../db/db';
-import { DBDeviceModel } from '../models/DBDeviceModel';
+import { DBDeviceType } from '../types/DBDeviceType';
+import { DeviceModel } from '../models/device-model';
 
 export const devicesLocalRepository = {
-    async findDevices(userId: string): Promise<DBDeviceModel[]> {
-        return await devicesCollection.find({ userId: userId }).toArray();
+    async findDevices(userId: string): Promise<DBDeviceType[]> {
+        return DeviceModel.find({}, { _id: 0 }).where({ userId }).lean();
     },
 
-    async findDevice(id: string): Promise<DBDeviceModel | null> {
-        return await devicesCollection.findOne({ deviceId: id });
+    async findDevice(id: string): Promise<DBDeviceType | null> {
+        return DeviceModel.findOne({ deviceId: id }, { _id: 0 }).lean();
     },
 
-    async createDevice(newDevice: DBDeviceModel): Promise<DBDeviceModel> {
-        const result = await devicesCollection.insertOne(newDevice);
+    async createDevice(newDevice: DBDeviceType): Promise<DBDeviceType> {
+        const deviceInstance = new DeviceModel();
 
-        return newDevice;
+        deviceInstance.ip = newDevice.ip;
+        deviceInstance.title = newDevice.title;
+        deviceInstance.lastActiveDate = newDevice.lastActiveDate;
+        deviceInstance.deviceId = newDevice.deviceId;
+        deviceInstance.userId = newDevice.userId;
+        deviceInstance.expirationDate = newDevice.expirationDate;
+
+        await deviceInstance.save();
+
+        return deviceInstance;
     },
 
-    async updateDevice(deviceId: string, ip: string, lastActiveDate: string): Promise<DBDeviceModel | null> {
-        return await devicesCollection.findOneAndUpdate(
-            { deviceId },
-            { $set: { ip, lastActiveDate } },
-            { returnDocument: 'after' }
-        );
+    async updateDevice(deviceId: string, ip: string, lastActiveDate: string): Promise<DBDeviceType | null> {
+        const deviceInstance = await DeviceModel.findOne({ deviceId });
+
+        if (!deviceInstance) return null;
+
+        deviceInstance.ip = ip;
+        deviceInstance.lastActiveDate = lastActiveDate;
+
+        const result = await deviceInstance.save();
+
+        return result;
     },
 
-    async removeDevice(id: string): Promise<DBDeviceModel | null> {
-        return await devicesCollection.findOneAndDelete({ deviceId: id });
+    async removeDevice(id: string): Promise<DBDeviceType | null> {
+        const deviceInstance = await DeviceModel.findOne({ deviceId: id });
+
+        if (!deviceInstance) return null;
+
+        await deviceInstance.deleteOne();
+
+        return deviceInstance;
     },
 
     async removeDevices(userId: string, id: string): Promise<void> {
-        await devicesCollection.deleteMany({ $and: [{ userId: userId }, { deviceId: { $ne: id } }] });
+        await DeviceModel.deleteMany({ $and: [{ userId: userId }, { deviceId: { $ne: id } }] });
     },
 
     async removeAll(): Promise<void> {
-        await devicesCollection.deleteMany({});
+        await DeviceModel.deleteMany({});
     }
 };

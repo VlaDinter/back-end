@@ -1,4 +1,4 @@
-export type DBPostModel = {
+export type DBPostType = {
     id: string,
     title: string,
     shortDescription: string,

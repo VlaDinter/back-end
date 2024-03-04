@@ -1,9 +1,9 @@
-import { VideoOutputModel } from '../models/VideoOutputModel';
+import { VideoOutputType } from '../types/VideoOutputType';
 import { videosLocalRepository } from '../repositories/videos-repository';
-import { DBVideoModel } from '../models/DBVideoModel';
+import { DBVideoType } from '../types/DBVideoType';
 
 export const videosService = {
-    _mapDBVideoToVideoOutputModel(dbVideo: DBVideoModel): DBVideoModel {
+    _mapDBVideoToVideoOutputModel(dbVideo: DBVideoType): DBVideoType {
         return {
             id: dbVideo.id,
             title: dbVideo.title,
@@ -16,30 +16,27 @@ export const videosService = {
         };
     },
 
-    async getVideos(): Promise<DBVideoModel[]> {
+    async getVideos(): Promise<DBVideoType[]> {
         const result = await videosLocalRepository.findVideos();
 
         return result.map(this._mapDBVideoToVideoOutputModel);
     },
 
-    async getVideo(id: number): Promise<DBVideoModel | null> {
+    async getVideo(id: number): Promise<DBVideoType | null> {
         const result = await videosLocalRepository.findVideo(id);
 
         return result && this._mapDBVideoToVideoOutputModel(result);
     },
 
-    async setVideo(newVideo: VideoOutputModel): Promise<DBVideoModel> {
+    async setVideo(newVideo: VideoOutputType): Promise<DBVideoType> {
         const video = {
             id: +(new Date()),
             title: newVideo.title,
             author: newVideo.author,
-            canBeDownloaded: newVideo.canBeDownloaded || false,
-            minAgeRestriction: newVideo.minAgeRestriction || null,
-            createdAt: new Date().toISOString(),
-            availableResolutions: newVideo.availableResolutions || null,
-            publicationDate: !newVideo.publicationDate ?
-                new Date((new Date()).setDate((new Date()).getDate() + 1)).toISOString() :
-                new Date(newVideo.publicationDate).toISOString()
+            canBeDownloaded: newVideo.canBeDownloaded,
+            minAgeRestriction: newVideo.minAgeRestriction,
+            availableResolutions: newVideo.availableResolutions,
+            publicationDate: newVideo.publicationDate && new Date(newVideo.publicationDate).toISOString()
         };
 
         const result = await videosLocalRepository.createVideo(video);
@@ -47,7 +44,7 @@ export const videosService = {
         return this._mapDBVideoToVideoOutputModel(result);
     },
 
-    async editVideo(id: number, newVideo: VideoOutputModel): Promise<DBVideoModel | null> {
+    async editVideo(id: number, newVideo: VideoOutputType): Promise<DBVideoType | null> {
         const result = await videosLocalRepository.updateVideo(id, {
             title: newVideo.title,
             author: newVideo.author,
@@ -60,7 +57,7 @@ export const videosService = {
         return result && this._mapDBVideoToVideoOutputModel(result);
     },
 
-    async deleteVideo(id: number): Promise<DBVideoModel | null> {
+    async deleteVideo(id: number): Promise<DBVideoType | null> {
         const result = await videosLocalRepository.removeVideo(id);
 
         return result && this._mapDBVideoToVideoOutputModel(result);

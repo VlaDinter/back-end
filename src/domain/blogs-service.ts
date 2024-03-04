@@ -1,15 +1,15 @@
 import { ParsedQs } from 'qs';
 import { blogsLocalRepository } from '../repositories/blogs-repository';
-import { BlogOutputModel } from '../models/BlogOutputModel';
-import { DBBlogModel } from '../models/DBBlogModel';
-import { SortDirectionModel } from '../models/SortDirectionModel';
-import { PaginationModel } from '../models/PaginationModel';
-import { PostOutputModel } from '../models/PostOutputModel';
+import { BlogOutputType } from '../types/BlogOutputType';
+import { DBBlogType } from '../types/DBBlogType';
+import { SortDirectionType } from '../types/SortDirectionType';
+import { PaginationType } from '../types/PaginationType';
+import { PostOutputType } from '../types/PostOutputType';
 import { postsService } from './posts-service';
-import { DBPostModel } from '../models/DBPostModel';
+import { DBPostType } from '../types/DBPostType';
 
 export const blogsService = {
-    _mapDBBlogToBlogOutputModel(dbBlog: DBBlogModel): DBBlogModel {
+    _mapDBBlogToBlogOutputModel(dbBlog: DBBlogType): DBBlogType {
         return {
             id: dbBlog.id,
             name: dbBlog.name,
@@ -20,17 +20,17 @@ export const blogsService = {
         };
     },
 
-    async getBlogs(queryParams: ParsedQs): Promise<PaginationModel<DBBlogModel>> {
+    async getBlogs(queryParams: ParsedQs): Promise<PaginationType<DBBlogType>> {
         const filters = {
             searchNameTerm: typeof queryParams.searchNameTerm === 'string' ? queryParams.searchNameTerm : null,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
-            sortDirection: queryParams.sortDirection === SortDirectionModel.ASC ? SortDirectionModel.ASC : SortDirectionModel.DESC,
+            sortDirection: queryParams.sortDirection === SortDirectionType.ASC ? SortDirectionType.ASC : SortDirectionType.DESC,
             pageNumber: !isNaN(Number(queryParams.pageNumber)) ? Number(queryParams.pageNumber) : 1,
             pageSize: !isNaN(Number(queryParams.pageSize)) ? Number(queryParams.pageSize) : 10
         };
 
         const result = await blogsLocalRepository.findBlogs(filters);
-        const blogsCount = await blogsLocalRepository.getBlogsCount(filters);
+        const blogsCount = await blogsLocalRepository.findBlogsCount(filters);
 
         return {
             pagesCount: Math.ceil(blogsCount / filters.pageSize),
@@ -41,13 +41,13 @@ export const blogsService = {
         };
     },
 
-    async getBlog(id: string): Promise<DBBlogModel | null> {
+    async getBlog(id: string): Promise<DBBlogType | null> {
         const result = await blogsLocalRepository.findBlog(id);
 
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async setBlog(newBlog: BlogOutputModel): Promise<DBBlogModel> {
+    async setBlog(newBlog: BlogOutputType): Promise<DBBlogType> {
         const blog = {
             id: `${+(new Date())}`,
             name: newBlog.name,
@@ -62,7 +62,7 @@ export const blogsService = {
         return this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async editBlog(id: string, newBlog: BlogOutputModel): Promise<DBBlogModel | null> {
+    async editBlog(id: string, newBlog: BlogOutputType): Promise<DBBlogType | null> {
         const result = await blogsLocalRepository.updateBlog(id, {
             name: newBlog.name,
             description: newBlog.description,
@@ -72,17 +72,17 @@ export const blogsService = {
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async deleteBlog(id: string): Promise<DBBlogModel | null> {
+    async deleteBlog(id: string): Promise<DBBlogType | null> {
         const result = await blogsLocalRepository.removeBlog(id);
 
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async getPosts(blogId: string, queryParams: ParsedQs): Promise<PaginationModel<DBPostModel> | null> {
+    async getPosts(blogId: string, queryParams: ParsedQs): Promise<PaginationType<DBPostType> | null> {
         return await this.getBlog(blogId) && await postsService.getPosts(queryParams, blogId);
     },
 
-    async setPost(blogId: string, newPost: PostOutputModel): Promise<DBPostModel | null> {
+    async setPost(blogId: string, newPost: PostOutputType): Promise<DBPostType | null> {
         return await this.getBlog(blogId) && await postsService.setPost({ ...newPost, blogId });
     },
 

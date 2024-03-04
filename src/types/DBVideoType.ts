@@ -1,6 +1,6 @@
-import { AvailableResolutionsModel } from './AvailableResolutionsModel';
+import { AvailableResolutionsType } from './AvailableResolutionsType';
 
-export type DBVideoModel = {
+export type DBVideoType = {
     id?: number,
     title: string,
     author: string,
@@ -8,5 +8,5 @@ export type DBVideoModel = {
     minAgeRestriction?: number | null,
     createdAt?: string,
     publicationDate?: string,
-    availableResolutions?: AvailableResolutionsModel[] | null
+    availableResolutions?: AvailableResolutionsType[] | null
 };
