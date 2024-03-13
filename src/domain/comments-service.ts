@@ -13,8 +13,12 @@ export const commentsService = {
         return {
             id: dbBlog.id,
             content: dbBlog.content,
-            commentatorInfo: dbBlog.commentatorInfo,
             createdAt: dbBlog.createdAt,
+            commentatorInfo: {
+                userId: dbBlog.commentatorInfo.userId,
+                userLogin: dbBlog.commentatorInfo.userLogin
+            },
+
             likesInfo: {
                 likesCount: dbBlog.likesInfo.likes!.length,
                 dislikesCount: dbBlog.likesInfo.dislikes!.length,
