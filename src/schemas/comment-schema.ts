@@ -13,6 +13,14 @@ export const CommentSchema = new mongoose.Schema<DBCommentType>({
         }
     },
 
+    likesInfo: {
+        required: true,
+        type: {
+            likes: { type: [String], require: true },
+            dislikes: { type: [String], require: true }
+        }
+    },
+
     createdAt: {
         type: String,
         default() {
