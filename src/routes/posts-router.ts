@@ -7,6 +7,7 @@ import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { postsService } from '../domain/posts-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
 import { commentValidation } from './comments-router';
+import { userIdMiddleware } from '../middlewares/user-id-middleware';
 
 export const postsRouter = Router({});
 
@@ -81,7 +82,7 @@ postsRouter.delete('/:postId', authorizationMiddleware, async (req: Request, res
     }
 });
 
-postsRouter.get('/:postId/comments', async (req: Request, res: Response) => {
+postsRouter.get('/:postId/comments', userIdMiddleware, async (req: Request, res: Response) => {
     const foundComments = await postsService.getComments(req.params.postId, req.query, req.userId as string);
 
     if (!foundComments) {

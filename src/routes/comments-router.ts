@@ -5,6 +5,7 @@ import { inputValidationMiddleware } from '../middlewares/input-validation-middl
 import { commentsService } from '../domain/comments-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
 import { LikeStatusType } from '../types/LikeStatusType';
+import { userIdMiddleware } from '../middlewares/user-id-middleware';
 
 export const commentsRouter = Router({});
 
@@ -17,7 +18,7 @@ const likeValidation = body('likeStatus').isString().withMessage('like status is
     return true;
 });
 
-commentsRouter.get('/:id', async (req: Request, res: Response) => {
+commentsRouter.get('/:id', userIdMiddleware, async (req: Request, res: Response) => {
     const foundComment = await commentsService.getComment(req.params.id, req.userId as string);
 
     if (!foundComment) {
