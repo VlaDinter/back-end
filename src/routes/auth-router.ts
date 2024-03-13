@@ -65,10 +65,10 @@ authRouter.post('/login',
             const ip = req.ip!;
             const title = req.headers['user-agent'] || 'device';
             const device = await devicesService.setDevice(user.id, ip, title);
-            const accessToken = await jwtService.createJWT({ userId: user.id }, '10s');
+            const accessToken = await jwtService.createJWT({ userId: user.id }, '10m');
             const refreshToken = await jwtService.createJWT(
                 { userId: user.id, deviceId: device.deviceId, lastActiveDate: device.lastActiveDate },
-                '20s'
+                '20m'
             );
 
             res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
@@ -114,10 +114,10 @@ authRouter.post('/registration-email-resending',
 
 authRouter.post('/refresh-token', refreshTokenMiddleware, async (req: Request, res: Response) => {
     const updatedDevice = await devicesService.editDevice(req.deviceId!, req.ip!);
-    const accessToken = await jwtService.createJWT({ userId: req.userId! }, '10s');
+    const accessToken = await jwtService.createJWT({ userId: req.userId! }, '10m');
     const refreshToken = await jwtService.createJWT(
         { userId: req.userId!, deviceId: req.deviceId!, lastActiveDate: updatedDevice!.lastActiveDate },
-        '20s'
+        '20m'
     );
 
     res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });

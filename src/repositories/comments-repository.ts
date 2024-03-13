@@ -37,6 +37,7 @@ export const commentsLocalRepository = {
         commentInstance.postId = newComment.postId;
         commentInstance.content = newComment.content;
         commentInstance.commentatorInfo = newComment.commentatorInfo;
+        commentInstance.likesInfo = newComment.likesInfo;
 
         await commentInstance.save();
 
@@ -48,6 +49,17 @@ export const commentsLocalRepository = {
 
         if (commentInstance) {
             commentInstance.content = newComment.content;
+
+            await commentInstance.save();
+        }
+    },
+
+    async updateCommentLikesInfo(id: string, likes: string[], dislikes: string[]): Promise<void> {
+        const commentInstance = await CommentModel.findOne({ id });
+
+        if (commentInstance) {
+            commentInstance.likesInfo.likes = likes;
+            commentInstance.likesInfo.dislikes = dislikes;
 
             await commentInstance.save();
         }

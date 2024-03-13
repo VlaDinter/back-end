@@ -84,12 +84,12 @@ export const postsService = {
         return result && this._mapDBPostToPostOutputModel(result);
     },
 
-    async getComments(postId: string, queryParams: ParsedQs): Promise<PaginationType<DBCommentType> | null> {
-        return await this.getPost(postId) && await commentsService.getComments(postId, queryParams);
+    async getComments(postId: string, queryParams: ParsedQs, userId = ''): Promise<PaginationType<DBCommentType> | null> {
+        return await this.getPost(postId) && await commentsService.getComments(postId, queryParams, userId);
     },
 
-    async setComment(userId: string, postId: string, newComment: CommentOutputType): Promise<DBCommentType | null> {
-        return await this.getPost(postId) && await commentsService.setComment(userId, postId, newComment);
+    async setComment(postId: string, newComment: CommentOutputType, userId: string): Promise<DBCommentType | null> {
+        return await this.getPost(postId) && await commentsService.setComment(postId, newComment, userId);
     },
 
     async deleteAll(): Promise<void> {

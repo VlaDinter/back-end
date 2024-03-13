@@ -82,7 +82,7 @@ postsRouter.delete('/:postId', authorizationMiddleware, async (req: Request, res
 });
 
 postsRouter.get('/:postId/comments', async (req: Request, res: Response) => {
-    const foundComments = await postsService.getComments(req.params.postId, req.query);
+    const foundComments = await postsService.getComments(req.params.postId, req.query, req.userId as string);
 
     if (!foundComments) {
         res.send(CodeResponsesEnum.Not_found_404);
@@ -96,7 +96,7 @@ postsRouter.post('/:postId/comments',
     commentValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const createdComment = await postsService.setComment(req.userId as string, req.params.postId, req.body);
+        const createdComment = await postsService.setComment(req.params.postId, req.body, req.userId as string);
 
         if (!createdComment) {
             res.send(CodeResponsesEnum.Not_found_404);

@@ -1,9 +1,11 @@
 import { CommentatorInfoType } from './CommentatorInfoType';
+import { LikesInfoType } from './LikesInfoType';
 
 export type DBCommentType = {
     id: string,
     postId?: string,
     content: string,
     commentatorInfo: CommentatorInfoType,
-    createdAt?: string
+    createdAt?: string,
+    likesInfo: LikesInfoType
 };

@@ -5,18 +5,27 @@ import { commentsLocalRepository } from '../repositories/comments-repository';
 import { DBCommentType } from '../types/DBCommentType';
 import { CommentOutputType } from '../types/CommentOutputType';
 import { usersService } from './users-service';
+import { LikeStatusesType } from '../types/LikeStatusesType';
+import { LikeStatusType } from '../types/LikeStatusType';
 
 export const commentsService = {
-    _mapDBCommentToCommentOutputModel(dbBlog: DBCommentType): DBCommentType {
+    _mapDBCommentToCommentOutputModel(dbBlog: DBCommentType, userId = ''): DBCommentType {
         return {
             id: dbBlog.id,
             content: dbBlog.content,
             commentatorInfo: dbBlog.commentatorInfo,
-            createdAt: dbBlog.createdAt
+            createdAt: dbBlog.createdAt,
+            likesInfo: {
+                likesCount: dbBlog.likesInfo.likes!.length,
+                dislikesCount: dbBlog.likesInfo.dislikes!.length,
+                myStatus: (dbBlog.likesInfo.likes!.includes(userId) && LikeStatusType.Like)
+                    || (dbBlog.likesInfo.dislikes!.includes(userId) && LikeStatusType.Dislike)
+                    || LikeStatusType.None
+            }
         };
     },
 
-    async getComments(postId: string, queryParams: ParsedQs): Promise<PaginationType<DBCommentType>> {
+    async getComments(postId: string, queryParams: ParsedQs, userId = ''): Promise<PaginationType<DBCommentType>> {
         const filters = {
             postId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
@@ -33,17 +42,17 @@ export const commentsService = {
             page: filters.pageNumber,
             pageSize: filters.pageSize,
             totalCount: commentsCount,
-            items: result.map(this._mapDBCommentToCommentOutputModel)
+            items: result.map((comment: DBCommentType) => this._mapDBCommentToCommentOutputModel(comment, userId))
         };
     },
 
-    async getComment(id: string): Promise<DBCommentType | null> {
+    async getComment(id: string, userId = ''): Promise<DBCommentType | null> {
         const result = await commentsLocalRepository.findComment(id);
 
-        return result && this._mapDBCommentToCommentOutputModel(result);
+        return result && this._mapDBCommentToCommentOutputModel(result, userId);
     },
 
-    async setComment(userId: string, postId: string, newComment: CommentOutputType): Promise<DBCommentType> {
+    async setComment(postId: string, newComment: CommentOutputType, userId: string): Promise<DBCommentType> {
         const user = await usersService.getUserById(userId);
         const comment = {
             id: `${+(new Date())}`,
@@ -52,18 +61,42 @@ export const commentsService = {
             commentatorInfo: {
                 userId,
                 userLogin: user!.login
+            },
+
+            likesInfo: {
+                dislikes: [],
+                likes: []
             }
         };
 
         const result = await commentsLocalRepository.createComment(comment);
 
-        return this._mapDBCommentToCommentOutputModel(result);
+        return this._mapDBCommentToCommentOutputModel(result, userId);
     },
 
     async editComment(id: string, newComment: CommentOutputType): Promise<void> {
         await commentsLocalRepository.updateComment(id, {
             content: newComment.content
         });
+    },
+
+    async editCommentLikesInfo(id: string, likeStatus: LikeStatusesType, userId: string): Promise<void> {
+        const result = await commentsLocalRepository.findComment(id);
+
+        if (result) {
+            let likes = result.likesInfo.likes!.filter(item => item !== userId);
+            let dislikes = result.likesInfo.dislikes!.filter(item => item !== userId);
+
+            if (likeStatus === LikeStatusType.Like) {
+                likes.push(userId);
+            }
+
+            if (likeStatus === LikeStatusType.Dislike) {
+                dislikes.push(userId);
+            }
+
+            await commentsLocalRepository.updateCommentLikesInfo(id, likes, dislikes);
+        }
     },
 
     async deleteComment(id: string): Promise<void> {
