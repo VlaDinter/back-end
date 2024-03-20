@@ -41,12 +41,13 @@ postsRouter.get('/:postId', userIdMiddleware, async (req: Request, res: Response
 });
 
 postsRouter.post('/',
-    authMiddleware,
+    authorizationMiddleware,
     titleValidation,
     shortDescriptionValidation,
     contentValidation,
     blogIdValidation,
     inputValidationMiddleware,
+    userIdMiddleware,
     async (req: Request, res: Response) => {
         const createdPost = await postsService.setPost(req.body, req.userId as string);
 

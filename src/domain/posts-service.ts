@@ -60,7 +60,7 @@ export const postsService = {
         return result && this._mapDBPostToPostOutputModel(result, userId);
     },
 
-    async setPost(newPost: PostOutputType, userId: string): Promise<DBPostType> {
+    async setPost(newPost: PostOutputType, userId = ''): Promise<DBPostType> {
         const blog = await blogsLocalRepository.findBlog(newPost.blogId);
         const post = {
             id: `${+(new Date())}`,

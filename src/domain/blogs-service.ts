@@ -80,7 +80,7 @@ export const blogsService = {
         return await this.getBlog(blogId) && await postsService.getPosts(queryParams, blogId, userId);
     },
 
-    async setPost(blogId: string, newPost: PostOutputType, userId: string): Promise<DBPostType | null> {
+    async setPost(blogId: string, newPost: PostOutputType, userId = ''): Promise<DBPostType | null> {
         return await this.getBlog(blogId) && await postsService.setPost({ ...newPost, blogId }, userId);
     },
 

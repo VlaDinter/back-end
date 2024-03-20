@@ -6,7 +6,6 @@ import { inputValidationMiddleware } from '../middlewares/input-validation-middl
 import { blogsService } from '../domain/blogs-service';
 import { contentValidation, shortDescriptionValidation, titleValidation } from './posts-router';
 import { userIdMiddleware } from '../middlewares/user-id-middleware';
-import { authMiddleware } from '../middlewares/auth-middleware';
 
 export const blogsRouter = Router({});
 
@@ -81,11 +80,12 @@ blogsRouter.get('/:blogId/posts', userIdMiddleware, async (req: Request, res: Re
 });
 
 blogsRouter.post('/:blogId/posts',
-    authMiddleware,
+    authorizationMiddleware,
     titleValidation,
     shortDescriptionValidation,
     contentValidation,
     inputValidationMiddleware,
+    userIdMiddleware,
     async (req: Request, res: Response) => {
         const createdPost = await blogsService.setPost(req.params.blogId, req.body, req.userId as string);
 
