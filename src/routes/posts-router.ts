@@ -6,7 +6,7 @@ import { inputValidationMiddleware } from '../middlewares/input-validation-middl
 import { blogsLocalRepository } from '../repositories/blogs-repository';
 import { postsService } from '../domain/posts-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
-import { commentValidation } from './comments-router';
+import { commentValidation, likeValidation } from './comments-router';
 import { userIdMiddleware } from '../middlewares/user-id-middleware';
 
 export const postsRouter = Router({});
@@ -24,14 +24,14 @@ const blogIdValidation = body('blogId').notEmpty().withMessage('blog id is requi
     return true;
 });
 
-postsRouter.get('/', async (req: Request, res: Response) => {
-    const foundPosts = await postsService.getPosts(req.query);
+postsRouter.get('/', userIdMiddleware, async (req: Request, res: Response) => {
+    const foundPosts = await postsService.getPosts(req.query, req.userId as string);
 
     res.send(foundPosts);
 });
 
-postsRouter.get('/:postId', async (req: Request, res: Response) => {
-    const foundPost = await postsService.getPost(req.params.postId);
+postsRouter.get('/:postId', userIdMiddleware, async (req: Request, res: Response) => {
+    const foundPost = await postsService.getPost(req.params.postId, req.userId as string);
 
     if (!foundPost) {
         res.send(CodeResponsesEnum.Not_found_404);
@@ -41,14 +41,14 @@ postsRouter.get('/:postId', async (req: Request, res: Response) => {
 });
 
 postsRouter.post('/',
-    authorizationMiddleware,
+    authMiddleware,
     titleValidation,
     shortDescriptionValidation,
     contentValidation,
     blogIdValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const createdPost = await postsService.setPost(req.body);
+        const createdPost = await postsService.setPost(req.body, req.userId as string);
 
         res.status(CodeResponsesEnum.Created_201).send(createdPost);
     }
@@ -67,6 +67,23 @@ postsRouter.put('/:postId',
         if (!updatedPost) {
             res.send(CodeResponsesEnum.Not_found_404);
         } else {
+            res.send(CodeResponsesEnum.Not_content_204);
+        }
+    }
+);
+
+postsRouter.put('/:postId/like-status',
+    authMiddleware,
+    likeValidation,
+    inputValidationMiddleware,
+    async (req: Request, res: Response) => {
+        const foundPost = await postsService.getPost(req.params.postId);
+
+        if (!foundPost) {
+            res.send(CodeResponsesEnum.Not_found_404);
+        } else {
+            await postsService.editPostExtendedLikesInfo(req.params.postId, req.body.likeStatus, req.userId as string);
+
             res.send(CodeResponsesEnum.Not_content_204);
         }
     }

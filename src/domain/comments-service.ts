@@ -22,8 +22,8 @@ export const commentsService = {
             likesInfo: {
                 likesCount: dbBlog.likesInfo.likes!.length,
                 dislikesCount: dbBlog.likesInfo.dislikes!.length,
-                myStatus: (dbBlog.likesInfo.likes!.includes(userId) && LikeStatusType.Like)
-                    || (dbBlog.likesInfo.dislikes!.includes(userId) && LikeStatusType.Dislike)
+                myStatus: (dbBlog.likesInfo.likes!.some(like => like.userId ===  userId) && LikeStatusType.Like)
+                    || (dbBlog.likesInfo.dislikes!.some(dislike => dislike.userId ===  userId) && LikeStatusType.Dislike)
                     || LikeStatusType.None
             }
         };
@@ -86,17 +86,26 @@ export const commentsService = {
 
     async editCommentLikesInfo(id: string, likeStatus: LikeStatusesType, userId: string): Promise<void> {
         const result = await commentsLocalRepository.findComment(id);
+        const user = await usersService.getUserById(userId);
 
-        if (result) {
-            let likes = result.likesInfo.likes!.filter(item => item !== userId);
-            let dislikes = result.likesInfo.dislikes!.filter(item => item !== userId);
+        if (result && user) {
+            let likes = result.likesInfo.likes!.filter(like => like.userId !== userId);
+            let dislikes = result.likesInfo.dislikes!.filter(dislike => dislike.userId !== userId);
 
             if (likeStatus === LikeStatusType.Like) {
-                likes.push(userId);
+                likes.push({
+                    userId,
+                    login: user.login,
+                    addedAt: new Date().toISOString()
+                });
             }
 
             if (likeStatus === LikeStatusType.Dislike) {
-                dislikes.push(userId);
+                dislikes.push({
+                    userId,
+                    login: user.login,
+                    addedAt: new Date().toISOString()
+                });
             }
 
             await commentsLocalRepository.updateCommentLikesInfo(id, likes, dislikes);

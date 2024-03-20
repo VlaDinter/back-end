@@ -1,3 +1,5 @@
+import { LikesInfoType } from './LikesInfoType';
+
 export type DBPostType = {
     id: string,
     title: string,
@@ -5,5 +7,6 @@ export type DBPostType = {
     content: string,
     blogId: string,
     blogName: string,
-    createdAt?: string
+    createdAt?: string,
+    extendedLikesInfo: LikesInfoType
 };

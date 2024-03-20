@@ -1,9 +1,11 @@
 import { LikeStatusesType } from './LikeStatusesType';
+import { LikeDetailsType } from './LikeDetailsType';
 
 export type LikesInfoType = {
-    likes?: string[],
-    dislikes?: string[],
+    likes?: LikeDetailsType[],
+    dislikes?: LikeDetailsType[],
     likesCount?: number,
     dislikesCount?: number,
-    myStatus?: LikeStatusesType
+    myStatus?: LikeStatusesType,
+    newestLikes?: LikeDetailsType[]
 };

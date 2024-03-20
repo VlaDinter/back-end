@@ -76,12 +76,12 @@ export const blogsService = {
         return result && this._mapDBBlogToBlogOutputModel(result);
     },
 
-    async getPosts(blogId: string, queryParams: ParsedQs): Promise<PaginationType<DBPostType> | null> {
-        return await this.getBlog(blogId) && await postsService.getPosts(queryParams, blogId);
+    async getPosts(blogId: string, queryParams: ParsedQs, userId = ''): Promise<PaginationType<DBPostType> | null> {
+        return await this.getBlog(blogId) && await postsService.getPosts(queryParams, blogId, userId);
     },
 
-    async setPost(blogId: string, newPost: PostOutputType): Promise<DBPostType | null> {
-        return await this.getBlog(blogId) && await postsService.setPost({ ...newPost, blogId });
+    async setPost(blogId: string, newPost: PostOutputType, userId: string): Promise<DBPostType | null> {
+        return await this.getBlog(blogId) && await postsService.setPost({ ...newPost, blogId }, userId);
     },
 
     async deleteAll(): Promise<void> {

@@ -8,9 +8,12 @@ import { PaginationType } from '../types/PaginationType';
 import { DBCommentType } from '../types/DBCommentType';
 import { commentsService } from './comments-service';
 import { CommentOutputType } from '../types/CommentOutputType';
+import { LikeStatusType } from '../types/LikeStatusType';
+import { LikeStatusesType } from '../types/LikeStatusesType';
+import { usersService } from './users-service';
 
 export const postsService = {
-    _mapDBPostToPostOutputModel(dbPost: DBPostType): DBPostType {
+    _mapDBPostToPostOutputModel(dbPost: DBPostType, userId = ''): DBPostType {
         return {
             id: dbPost.id,
             title: dbPost.title,
@@ -18,11 +21,19 @@ export const postsService = {
             content: dbPost.content,
             blogId: dbPost.blogId,
             blogName: dbPost.blogName,
-            createdAt: dbPost.createdAt
+            createdAt: dbPost.createdAt,
+            extendedLikesInfo: {
+                likesCount: dbPost.extendedLikesInfo.likes!.length,
+                dislikesCount: dbPost.extendedLikesInfo.dislikes!.length,
+                newestLikes: dbPost.extendedLikesInfo.likes!.slice(-3),
+                myStatus: (dbPost.extendedLikesInfo.likes!.some(like => like.userId ===  userId) && LikeStatusType.Like)
+                    || (dbPost.extendedLikesInfo.dislikes!.some(dislike => dislike.userId ===  userId) && LikeStatusType.Dislike)
+                    || LikeStatusType.None
+            }
         };
     },
 
-    async getPosts(queryParams: ParsedQs, blogId?: string): Promise<PaginationType<DBPostType>> {
+    async getPosts(queryParams: ParsedQs, blogId?: string, userId = ''): Promise<PaginationType<DBPostType>> {
         const filters = {
             blogId: blogId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
@@ -39,17 +50,17 @@ export const postsService = {
             page: filters.pageNumber,
             pageSize: filters.pageSize,
             totalCount: postsCount,
-            items: result.map(this._mapDBPostToPostOutputModel)
+            items: result.map((post: DBPostType) => this._mapDBPostToPostOutputModel(post, userId))
         };
     },
 
-    async getPost(id: string): Promise<DBPostType | null> {
+    async getPost(id: string, userId = ''): Promise<DBPostType | null> {
         const result = await postsLocalRepository.findPost(id);
 
-        return result && this._mapDBPostToPostOutputModel(result);
+        return result && this._mapDBPostToPostOutputModel(result, userId);
     },
 
-    async setPost(newPost: PostOutputType): Promise<DBPostType> {
+    async setPost(newPost: PostOutputType, userId: string): Promise<DBPostType> {
         const blog = await blogsLocalRepository.findBlog(newPost.blogId);
         const post = {
             id: `${+(new Date())}`,
@@ -57,12 +68,16 @@ export const postsService = {
             shortDescription: newPost.shortDescription,
             content: newPost.content,
             blogId: newPost.blogId,
-            blogName: blog!.name
+            blogName: blog!.name,
+            extendedLikesInfo: {
+                dislikes: [],
+                likes: []
+            }
         };
 
         const result = await postsLocalRepository.createPost(post);
 
-        return this._mapDBPostToPostOutputModel(result);
+        return this._mapDBPostToPostOutputModel(result, userId);
     },
 
     async editPost(id: string, newPost: PostOutputType): Promise<DBPostType | null> {
@@ -76,6 +91,34 @@ export const postsService = {
         });
 
         return result && this._mapDBPostToPostOutputModel(result);
+    },
+
+    async editPostExtendedLikesInfo(id: string, likeStatus: LikeStatusesType, userId: string): Promise<void> {
+        const result = await postsLocalRepository.findPost(id);
+        const user = await usersService.getUserById(userId);
+
+        if (result && user) {
+            let likes = result.extendedLikesInfo.likes!.filter(like => like.userId !== userId);
+            let dislikes = result.extendedLikesInfo.dislikes!.filter(dislike => dislike.userId !== userId);
+
+            if (likeStatus === LikeStatusType.Like) {
+                likes.push({
+                    userId,
+                    login: user.login,
+                    addedAt: new Date().toISOString()
+                });
+            }
+
+            if (likeStatus === LikeStatusType.Dislike) {
+                dislikes.push({
+                    userId,
+                    login: user.login,
+                    addedAt: new Date().toISOString()
+                });
+            }
+
+            await postsLocalRepository.updatePostExtendedLikesInfo(id, likes, dislikes);
+        }
     },
 
     async deletePost(id: string): Promise<DBPostType | null> {

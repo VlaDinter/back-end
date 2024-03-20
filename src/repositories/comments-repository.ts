@@ -3,6 +3,7 @@ import { FiltersType } from '../types/FiltersType';
 import { DBCommentType } from '../types/DBCommentType';
 import { CommentOutputType } from '../types/CommentOutputType';
 import { CommentModel } from '../models/comment-model';
+import { LikeDetailsType } from '../types/LikeDetailsType';
 
 export const commentsLocalRepository = {
     findCommentsQuery(filters: FiltersType): Query<DBCommentType[], DBCommentType> {
@@ -54,7 +55,7 @@ export const commentsLocalRepository = {
         }
     },
 
-    async updateCommentLikesInfo(id: string, likes: string[], dislikes: string[]): Promise<void> {
+    async updateCommentLikesInfo(id: string, likes: LikeDetailsType[], dislikes: LikeDetailsType[]): Promise<void> {
         const commentInstance = await CommentModel.findOne({ id });
 
         if (commentInstance) {

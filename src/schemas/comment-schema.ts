@@ -16,8 +16,25 @@ export const CommentSchema = new mongoose.Schema<DBCommentType>({
     likesInfo: {
         required: true,
         type: {
-            likes: { type: [String], require: true },
-            dislikes: { type: [String], require: true }
+            likes: {
+                type: [{
+                    addedAt: { type: String, require: true },
+                    userId: { type: String, require: true },
+                    login: { type: String, require: true }
+                }],
+
+                require: true
+            },
+
+            dislikes: {
+                type: [{
+                    addedAt: { type: String, require: true },
+                    userId: { type: String, require: true },
+                    login: { type: String, require: true }
+                }],
+
+                require: true
+            }
         }
     },
 

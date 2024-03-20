@@ -3,6 +3,7 @@ import { DBPostType } from '../types/DBPostType';
 import { FiltersType } from '../types/FiltersType';
 import { PostOutputType } from '../types/PostOutputType';
 import { PostModel } from '../models/post-model';
+import { LikeDetailsType } from '../types/LikeDetailsType';
 
 export const postsLocalRepository = {
     findPostsQuery(filters: FiltersType): Query<DBPostType[], DBPostType> {
@@ -39,6 +40,7 @@ export const postsLocalRepository = {
         postInstance.content = newPost.content;
         postInstance.blogId = newPost.blogId;
         postInstance.blogName = newPost.blogName;
+        postInstance.extendedLikesInfo = newPost.extendedLikesInfo;
 
         await postInstance.save();
 
@@ -59,6 +61,17 @@ export const postsLocalRepository = {
         const result = await postInstance.save();
 
         return result;
+    },
+
+    async updatePostExtendedLikesInfo(id: string, likes: LikeDetailsType[], dislikes: LikeDetailsType[]): Promise<void> {
+        const postInstance = await PostModel.findOne({ id });
+
+        if (postInstance) {
+            postInstance.extendedLikesInfo.likes = likes;
+            postInstance.extendedLikesInfo.dislikes = dislikes;
+
+            await postInstance.save();
+        }
     },
 
     async removePost(id: string): Promise<DBPostType | null> {

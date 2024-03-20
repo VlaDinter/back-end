@@ -5,6 +5,8 @@ import { authorizationMiddleware } from '../middlewares/authorization-middleware
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
 import { blogsService } from '../domain/blogs-service';
 import { contentValidation, shortDescriptionValidation, titleValidation } from './posts-router';
+import { userIdMiddleware } from '../middlewares/user-id-middleware';
+import { authMiddleware } from '../middlewares/auth-middleware';
 
 export const blogsRouter = Router({});
 
@@ -68,8 +70,8 @@ blogsRouter.delete('/:blogId', authorizationMiddleware, async (req: Request, res
     }
 });
 
-blogsRouter.get('/:blogId/posts', async (req: Request, res: Response) => {
-    const foundPosts = await blogsService.getPosts(req.params.blogId, req.query);
+blogsRouter.get('/:blogId/posts', userIdMiddleware, async (req: Request, res: Response) => {
+    const foundPosts = await blogsService.getPosts(req.params.blogId, req.query, req.userId as string);
 
     if (!foundPosts) {
         res.send(CodeResponsesEnum.Not_found_404);
@@ -79,13 +81,13 @@ blogsRouter.get('/:blogId/posts', async (req: Request, res: Response) => {
 });
 
 blogsRouter.post('/:blogId/posts',
-    authorizationMiddleware,
+    authMiddleware,
     titleValidation,
     shortDescriptionValidation,
     contentValidation,
     inputValidationMiddleware,
     async (req: Request, res: Response) => {
-        const createdPost = await blogsService.setPost(req.params.blogId, req.body);
+        const createdPost = await blogsService.setPost(req.params.blogId, req.body, req.userId as string);
 
         if (!createdPost) {
             res.send(CodeResponsesEnum.Not_found_404);

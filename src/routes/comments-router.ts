@@ -10,7 +10,7 @@ import { userIdMiddleware } from '../middlewares/user-id-middleware';
 export const commentsRouter = Router({});
 
 export const commentValidation = body('content').isString().withMessage('content is invalid').trim().notEmpty().withMessage('content is required').isLength({ min: 20, max: 300 }).withMessage('content is too long');
-const likeValidation = body('likeStatus').isString().withMessage('like status is invalid').trim().notEmpty().withMessage('like status is required').custom(likeStatus => {
+export const likeValidation = body('likeStatus').isString().withMessage('like status is invalid').trim().notEmpty().withMessage('like status is required').custom(likeStatus => {
     const statuses = [LikeStatusType.None, LikeStatusType.Like, LikeStatusType.Dislike];
 
     if (!statuses.includes(likeStatus)) throw new Error('like status is incorrect');
