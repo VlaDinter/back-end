@@ -38,7 +38,7 @@ export const postsService = {
         };
     },
 
-    async getPosts(queryParams: ParsedQs, blogId?: string, userId = ''): Promise<PaginationType<DBPostType>> {
+    async getPosts(queryParams: ParsedQs, userId = '', blogId?: string): Promise<PaginationType<DBPostType>> {
         const filters = {
             blogId: blogId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',

@@ -77,7 +77,7 @@ export const blogsService = {
     },
 
     async getPosts(blogId: string, queryParams: ParsedQs, userId = ''): Promise<PaginationType<DBPostType> | null> {
-        return await this.getBlog(blogId) && await postsService.getPosts(queryParams, blogId, userId);
+        return await this.getBlog(blogId) && await postsService.getPosts(queryParams, userId, blogId);
     },
 
     async setPost(blogId: string, newPost: PostOutputType, userId = ''): Promise<DBPostType | null> {
