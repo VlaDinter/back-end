@@ -25,7 +25,12 @@ export const postsService = {
             extendedLikesInfo: {
                 likesCount: dbPost.extendedLikesInfo.likes!.length,
                 dislikesCount: dbPost.extendedLikesInfo.dislikes!.length,
-                newestLikes: dbPost.extendedLikesInfo.likes!.slice(-3),
+                newestLikes: dbPost.extendedLikesInfo.likes!.slice(-3).map(like => ({
+                    userId: like.userId,
+                    login: like.login,
+                    addedAt: like.addedAt
+                })),
+
                 myStatus: (dbPost.extendedLikesInfo.likes!.some(like => like.userId ===  userId) && LikeStatusType.Like)
                     || (dbPost.extendedLikesInfo.dislikes!.some(dislike => dislike.userId ===  userId) && LikeStatusType.Dislike)
                     || LikeStatusType.None
