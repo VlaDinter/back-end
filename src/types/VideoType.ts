@@ -1,6 +1,6 @@
 import { AvailableResolutionsType } from './AvailableResolutionsType';
 
-export type VideoOutputType = {
+export type VideoType = {
     title: string,
     author: string,
     canBeDownloaded?: boolean,

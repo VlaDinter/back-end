@@ -12,23 +12,21 @@ export const PostSchema = new mongoose.Schema<DBPostType>({
         required: true,
         type: {
             likes: {
+                require: true,
                 type: [{
                     addedAt: { type: String, require: true },
                     userId: { type: String, require: true },
                     login: { type: String, require: true }
-                }],
-
-                require: true
+                }]
             },
 
             dislikes: {
+                require: true,
                 type: [{
                     addedAt: { type: String, require: true },
                     userId: { type: String, require: true },
                     login: { type: String, require: true }
-                }],
-
-                require: true
+                }]
             }
         }
     },

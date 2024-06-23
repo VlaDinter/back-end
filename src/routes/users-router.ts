@@ -1,9 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { body } from 'express-validator';
-import { CodeResponsesEnum } from '../types';
 import { authorizationMiddleware } from '../middlewares/authorization-middleware';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
-import { usersService } from '../domain/users-service';
+import { UsersController } from '../controllers/users-controller';
+import { container } from '../features/composition-root';
+import { UsersService } from '../domain/users-service';
+
+const usersController = container.resolve(UsersController);
+const usersService = container.get(UsersService);
 
 export const usersRouter = Router({});
 
@@ -24,31 +28,14 @@ export const emailValidation = body('email').isEmail().withMessage('email is inv
     return true;
 });
 
-usersRouter.get('/', authorizationMiddleware, async (req: Request, res: Response) => {
-    const foundUsers = await usersService.getUsers(req.query);
-
-    res.send(foundUsers);
-});
-
+usersRouter.get('/', authorizationMiddleware, usersController.getUsers.bind(usersController));
 usersRouter.post('/',
     authorizationMiddleware,
     loginValidation,
     passwordValidation,
     emailValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const createdUser = await usersService.setUser(req.body);
-
-        res.status(CodeResponsesEnum.Created_201).send(createdUser);
-    }
+    usersController.postUsers.bind(usersController)
 );
 
-usersRouter.delete('/:userId', authorizationMiddleware, async (req: Request, res: Response) => {
-    const deletedUser = await usersService.deleteUser(req.params.userId);
-
-    if (!deletedUser) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
-});
+usersRouter.delete('/:userId', authorizationMiddleware, usersController.deleteUser.bind(usersController));

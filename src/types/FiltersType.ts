@@ -1,4 +1,4 @@
-import { SortDirectionType } from './SortDirectionType';
+import { SortDirectionEnum } from './SortDirectionEnum';
 
 export type FiltersType = {
     postId?: string,
@@ -7,7 +7,7 @@ export type FiltersType = {
     searchLoginTerm?: string | null,
     searchEmailTerm?: string | null,
     sortBy: string,
-    sortDirection: SortDirectionType.ASC | SortDirectionType.DESC,
+    sortDirection: SortDirectionEnum.ASC | SortDirectionEnum.DESC,
     pageNumber: number,
     pageSize: number
 };

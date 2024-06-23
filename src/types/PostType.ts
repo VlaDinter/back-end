@@ -1,4 +1,4 @@
-export type PostOutputType = {
+export type PostType = {
     title: string,
     shortDescription: string,
     content: string,

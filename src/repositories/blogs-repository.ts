@@ -1,10 +1,12 @@
 import { Query } from 'mongoose';
 import { DBBlogType } from '../types/DBBlogType';
 import { FiltersType } from '../types/FiltersType';
-import { BlogOutputType } from '../types/BlogOutputType';
 import { BlogModel } from '../models/blog-model';
+import { BlogType } from '../types/BlogType';
+import { injectable } from 'inversify';
 
-export const blogsLocalRepository = {
+@injectable()
+export class BlogsRepository {
     findBlogsQuery(filters: FiltersType): Query<DBBlogType[], DBBlogType> {
         const query = BlogModel.find({}, { _id: 0 });
 
@@ -13,22 +15,22 @@ export const blogsLocalRepository = {
         }
 
         return query;
-    },
+    }
 
     async findBlogsCount(filters: FiltersType): Promise<number> {
         return this.findBlogsQuery(filters).countDocuments().lean();
-    },
+    }
 
     async findBlogs(filters: FiltersType): Promise<DBBlogType[]> {
         const skip = (filters.pageNumber - 1) * filters.pageSize;
         const sort = { [filters.sortBy]: filters.sortDirection };
 
         return this.findBlogsQuery(filters).sort(sort).skip(skip).limit(filters.pageSize).lean();
-    },
+    }
 
     async findBlog(id: string): Promise<DBBlogType | null> {
         return BlogModel.findOne({ id }, { _id: 0 }).lean();
-    },
+    }
 
     async createBlog(newBlog: DBBlogType): Promise<DBBlogType> {
         const blogInstance = new BlogModel();
@@ -41,9 +43,9 @@ export const blogsLocalRepository = {
         await blogInstance.save();
 
         return blogInstance;
-    },
+    }
 
-    async updateBlog(id: string, newBlog: BlogOutputType): Promise<DBBlogType | null> {
+    async updateBlog(id: string, newBlog: BlogType): Promise<DBBlogType | null> {
         const blogInstance = await BlogModel.findOne({ id });
 
         if (!blogInstance) return null;
@@ -55,9 +57,9 @@ export const blogsLocalRepository = {
         const result = await blogInstance.save();
 
         return result;
-    },
+    }
 
-    async removeBlog(id: string): Promise<DBBlogType | null> {
+    async deleteBlog(id: string): Promise<DBBlogType | null> {
         const blogInstance = await BlogModel.findOne({ id });
 
         if (!blogInstance) return null;
@@ -65,9 +67,9 @@ export const blogsLocalRepository = {
         await blogInstance.deleteOne();
 
         return blogInstance;
-    },
+    }
 
-    async removeAll(): Promise<void> {
+    async deleteAll(): Promise<void> {
         await BlogModel.deleteMany({});
     }
-};
+}

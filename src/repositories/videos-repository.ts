@@ -1,15 +1,17 @@
 import { DBVideoType } from '../types/DBVideoType';
-import { VideoOutputType } from '../types/VideoOutputType';
+import { VideoType } from '../types/VideoType';
 import { VideoModel } from '../models/video-model';
+import { injectable } from 'inversify';
 
-export const videosLocalRepository = {
+@injectable()
+export class VideosRepository {
     async findVideos(): Promise<DBVideoType[]> {
         return VideoModel.find({}, { _id: 0 }).lean();
-    },
+    }
 
     async findVideo(id: number): Promise<DBVideoType | null> {
         return VideoModel.findOne({ id }, { _id: 0 }).lean();
-    },
+    }
 
     async createVideo(newVideo: DBVideoType): Promise<DBVideoType> {
         const videoInstance = new VideoModel();
@@ -25,9 +27,9 @@ export const videosLocalRepository = {
         await videoInstance.save();
 
         return videoInstance;
-    },
+    }
 
-    async updateVideo(id: number, newVideo: VideoOutputType): Promise<DBVideoType | null> {
+    async updateVideo(id: number, newVideo: VideoType): Promise<DBVideoType | null> {
         const videoInstance = await VideoModel.findOne({ id });
 
         if (!videoInstance) return null;
@@ -42,9 +44,9 @@ export const videosLocalRepository = {
         const result = await videoInstance.save();
 
         return result;
-    },
+    }
 
-    async removeVideo(id: number): Promise<DBVideoType | null> {
+    async deleteVideo(id: number): Promise<DBVideoType | null> {
         const videoInstance = await VideoModel.findOne({ id });
 
         if (!videoInstance) return null;
@@ -52,9 +54,9 @@ export const videosLocalRepository = {
         await videoInstance.deleteOne();
 
         return videoInstance;
-    },
+    }
 
-    async removeAll(): Promise<void> {
+    async deleteAll(): Promise<void> {
         await VideoModel.deleteMany({});
     }
-};
+}

@@ -2,8 +2,10 @@ import { Query } from 'mongoose';
 import { FiltersType } from '../types/FiltersType';
 import { DBUserType } from '../types/DBUserType';
 import { UserModel } from '../models/user-model';
+import { injectable } from 'inversify';
 
-export const usersLocalRepository = {
+@injectable()
+export class UsersRepository {
     findUsersQuery(filters: FiltersType): Query<DBUserType[], DBUserType> {
         const query = UserModel.find({}, { _id: 0 });
 
@@ -16,30 +18,30 @@ export const usersLocalRepository = {
         }
 
         return query;
-    },
+    }
 
     async findUsersCount(filters: FiltersType): Promise<number> {
         return this.findUsersQuery(filters).countDocuments().lean();
-    },
+    }
 
     async findUsers(filters: FiltersType): Promise<DBUserType[]> {
         const skip = (filters.pageNumber - 1) * filters.pageSize;
         const sort = { [filters.sortBy]: filters.sortDirection };
 
         return this.findUsersQuery(filters).sort(sort).skip(skip).limit(filters.pageSize).lean();
-    },
+    }
 
     async findUserByConfirmationCode(emailConfirmationCode: string): Promise<DBUserType | null> {
         return UserModel.findOne({ 'emailConfirmation.confirmationCode': emailConfirmationCode }, { _id: 0 }).lean();
-    },
+    }
 
     async findByLoginOrEmail(loginOrEmail: string): Promise<DBUserType | null> {
         return UserModel.findOne({ $or: [{ email: loginOrEmail }, { login: loginOrEmail }] }, { _id: 0 }).lean();
-    },
+    }
 
     async findUserById(id: string): Promise<DBUserType | null> {
         return UserModel.findOne({ id }, { _id: 0 }).lean();
-    },
+    }
 
     async createUser(newUser: DBUserType): Promise<DBUserType> {
         const userInstance = new UserModel();
@@ -53,7 +55,7 @@ export const usersLocalRepository = {
         await userInstance.save();
 
         return userInstance;
-    },
+    }
 
     async updateConfirmation(id: string): Promise<void> {
         const userInstance = await UserModel.findOne({ id });
@@ -63,7 +65,7 @@ export const usersLocalRepository = {
 
             await userInstance.save();
         }
-    },
+    }
 
     async updateEmailConfirmation(id: string, confirmationCode: string, expirationDate: Date): Promise<void> {
         const userInstance = await UserModel.findOne({ id });
@@ -84,7 +86,7 @@ export const usersLocalRepository = {
 
             await userInstance.save();
         }
-    },
+    }
 
     async updatePassword(id: string, passwordHash: string): Promise<void> {
         const userInstance = await UserModel.findOne({ id });
@@ -94,9 +96,9 @@ export const usersLocalRepository = {
 
             await userInstance.save();
         }
-    },
+    }
 
-    async removeUser(id: string): Promise<DBUserType | null> {
+    async deleteUser(id: string): Promise<DBUserType | null> {
         const userInstance = await UserModel.findOne({ id });
 
         if (!userInstance) return null;
@@ -104,9 +106,9 @@ export const usersLocalRepository = {
         await userInstance.deleteOne();
 
         return userInstance;
-    },
+    }
 
-    async removeAll(): Promise<void> {
+    async deleteAll(): Promise<void> {
         await UserModel.deleteMany({});
     }
-};
+}

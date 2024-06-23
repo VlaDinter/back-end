@@ -1,10 +1,11 @@
-import { AvailableResolutionType } from './AvailableResolutionType';
+import { AvailableResolutionsEnum } from './AvailableResolutionsEnum';
 
-export type AvailableResolutionsType = AvailableResolutionType.P144
-    | AvailableResolutionType.P240
-    | AvailableResolutionType.P360
-    | AvailableResolutionType.P480
-    | AvailableResolutionType.P720
-    | AvailableResolutionType.P1080
-    | AvailableResolutionType.P1440
-    | AvailableResolutionType.P2160;
+export type AvailableResolutionsType =
+    AvailableResolutionsEnum.P144 |
+    AvailableResolutionsEnum.P240 |
+    AvailableResolutionsEnum.P360 |
+    AvailableResolutionsEnum.P480 |
+    AvailableResolutionsEnum.P720 |
+    AvailableResolutionsEnum.P1080 |
+    AvailableResolutionsEnum.P1440 |
+    AvailableResolutionsEnum.P2160;

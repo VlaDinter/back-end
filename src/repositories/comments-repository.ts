@@ -1,11 +1,13 @@
 import { Query } from 'mongoose';
 import { FiltersType } from '../types/FiltersType';
 import { DBCommentType } from '../types/DBCommentType';
-import { CommentOutputType } from '../types/CommentOutputType';
+import { CommentType } from '../types/CommentType';
 import { CommentModel } from '../models/comment-model';
 import { LikeDetailsType } from '../types/LikeDetailsType';
+import { injectable } from 'inversify';
 
-export const commentsLocalRepository = {
+@injectable()
+export class CommentsRepository {
     findCommentsQuery(filters: FiltersType): Query<DBCommentType[], DBCommentType> {
         const query = CommentModel.find({}, { _id: 0 });
 
@@ -14,22 +16,22 @@ export const commentsLocalRepository = {
         }
 
         return query;
-    },
+    }
 
     async findUsersCount(filters: FiltersType): Promise<number> {
         return this.findCommentsQuery(filters).countDocuments().lean();
-    },
+    }
 
     async findComments(filters: FiltersType): Promise<DBCommentType[]> {
         const skip = (filters.pageNumber - 1) * filters.pageSize;
         const sort = { [filters.sortBy]: filters.sortDirection };
 
         return this.findCommentsQuery(filters).sort(sort).skip(skip).limit(filters.pageSize).lean();
-    },
+    }
 
     async findComment(id: string): Promise<DBCommentType | null> {
         return CommentModel.findOne({ id }, { _id: 0 }).lean();
-    },
+    }
 
     async createComment(newComment: DBCommentType): Promise<DBCommentType> {
         const commentInstance = new CommentModel();
@@ -43,9 +45,9 @@ export const commentsLocalRepository = {
         await commentInstance.save();
 
         return commentInstance;
-    },
+    }
 
-    async updateComment(id: string, newComment: CommentOutputType): Promise<void> {
+    async updateComment(id: string, newComment: CommentType): Promise<void> {
         const commentInstance = await CommentModel.findOne({ id });
 
         if (commentInstance) {
@@ -53,7 +55,7 @@ export const commentsLocalRepository = {
 
             await commentInstance.save();
         }
-    },
+    }
 
     async updateCommentLikesInfo(id: string, likes: LikeDetailsType[], dislikes: LikeDetailsType[]): Promise<void> {
         const commentInstance = await CommentModel.findOne({ id });
@@ -64,17 +66,17 @@ export const commentsLocalRepository = {
 
             await commentInstance.save();
         }
-    },
+    }
 
-    async removeComment(id: string): Promise<void> {
+    async deleteComment(id: string): Promise<void> {
         const commentInstance = await CommentModel.findOne({ id });
 
         if (commentInstance) {
             await commentInstance.deleteOne();
         }
-    },
+    }
 
-    async removeAll(): Promise<void> {
+    async deleteAll(): Promise<void> {
         await CommentModel.deleteMany({});
     }
-};
+}

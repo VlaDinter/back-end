@@ -1,42 +1,48 @@
 import add from 'date-fns/add';
-import { requestsLocalRepository } from '../repositories/requests-repository';
+import { RequestsRepository } from '../repositories/requests-repository';
 import { DBRequestType } from '../types/DBRequestType';
+import { inject, injectable } from 'inversify';
 
-export const requestsService = {
+@injectable()
+export class RequestsService {
+    constructor(
+        @inject(RequestsRepository) protected requestsRepository: RequestsRepository
+    ) {}
+
     _mapDBRequestToDBRequestModel(dbRequest: DBRequestType): DBRequestType {
         return {
             ip: dbRequest.ip,
             date: dbRequest.date,
             url: dbRequest.url
         };
-    },
+    }
 
     async getRequests(ip: string, url: string): Promise<DBRequestType[]> {
         const date = add(new Date(), { seconds: -10 });
-        const result = await requestsLocalRepository.findRequests(ip, url, date);
+        const result = await this.requestsRepository.findRequests(ip, url, date);
 
         return result.map(this._mapDBRequestToDBRequestModel);
-    },
+    }
 
-    async setRequest(ip: string, url: string): Promise<DBRequestType> {
+    async addRequest(ip: string, url: string): Promise<DBRequestType> {
         const request = {
             ip,
             url,
             date: new Date()
         };
 
-        const result = await requestsLocalRepository.createRequest(request);
+        const result = await this.requestsRepository.createRequest(request);
 
         return this._mapDBRequestToDBRequestModel(result);
-    },
+    }
 
-    async deleteRequests(): Promise<void> {
+    async removeRequests(): Promise<void> {
         const date = add(new Date(), { seconds: -10 });
 
-        await requestsLocalRepository.removeRequests(date);
-    },
-
-    async deleteAll(): Promise<void> {
-        await requestsLocalRepository.removeAll();
+        await this.requestsRepository.deleteRequests(date);
     }
-};
+
+    async removeAll(): Promise<void> {
+        await this.requestsRepository.deleteAll();
+    }
+}

@@ -1,18 +1,27 @@
 import { ParsedQs } from 'qs';
-import { blogsLocalRepository } from '../repositories/blogs-repository';
+import { BlogsRepository } from '../repositories/blogs-repository';
 import { DBPostType } from '../types/DBPostType';
-import { PostOutputType } from '../types/PostOutputType';
-import { postsLocalRepository } from '../repositories/posts-repository';
-import { SortDirectionType } from '../types/SortDirectionType';
+import { PostType } from '../types/PostType';
+import { PostsRepository } from '../repositories/posts-repository';
+import { SortDirectionEnum } from '../types/SortDirectionEnum';
 import { PaginationType } from '../types/PaginationType';
 import { DBCommentType } from '../types/DBCommentType';
-import { commentsService } from './comments-service';
-import { CommentOutputType } from '../types/CommentOutputType';
+import { CommentsService } from './comments-service';
+import { CommentType } from '../types/CommentType';
 import { LikeStatusType } from '../types/LikeStatusType';
-import { LikeStatusesType } from '../types/LikeStatusesType';
-import { usersService } from './users-service';
+import { LikeStatusEnum } from '../types/LikeStatusEnum';
+import { UsersService } from './users-service';
+import { inject, injectable } from 'inversify';
 
-export const postsService = {
+@injectable()
+export class PostsService {
+    constructor(
+        @inject(PostsRepository) protected postsRepository: PostsRepository,
+        @inject(BlogsRepository) protected blogsRepository: BlogsRepository,
+        @inject(CommentsService) protected commentsService: CommentsService,
+        @inject(UsersService) protected usersService: UsersService
+    ) {}
+
     _mapDBPostToPostOutputModel(dbPost: DBPostType, userId = ''): DBPostType {
         return {
             id: dbPost.id,
@@ -31,24 +40,24 @@ export const postsService = {
                     addedAt: like.addedAt
                 })),
 
-                myStatus: (dbPost.extendedLikesInfo.likes!.some(like => like.userId ===  userId) && LikeStatusType.Like)
-                    || (dbPost.extendedLikesInfo.dislikes!.some(dislike => dislike.userId ===  userId) && LikeStatusType.Dislike)
-                    || LikeStatusType.None
+                myStatus: (dbPost.extendedLikesInfo.likes!.some(like => like.userId ===  userId) && LikeStatusEnum.Like)
+                    || (dbPost.extendedLikesInfo.dislikes!.some(dislike => dislike.userId ===  userId) && LikeStatusEnum.Dislike)
+                    || LikeStatusEnum.None
             }
         };
-    },
+    }
 
     async getPosts(queryParams: ParsedQs, userId = '', blogId?: string): Promise<PaginationType<DBPostType>> {
         const filters = {
             blogId: blogId,
             sortBy: typeof queryParams.sortBy === 'string' ? queryParams.sortBy : 'createdAt',
-            sortDirection: queryParams.sortDirection === SortDirectionType.ASC ? SortDirectionType.ASC : SortDirectionType.DESC,
+            sortDirection: queryParams.sortDirection === SortDirectionEnum.ASC ? SortDirectionEnum.ASC : SortDirectionEnum.DESC,
             pageNumber: !isNaN(Number(queryParams.pageNumber)) ? Number(queryParams.pageNumber) : 1,
             pageSize: !isNaN(Number(queryParams.pageSize)) ? Number(queryParams.pageSize) : 10
         };
 
-        const result = await postsLocalRepository.findPosts(filters);
-        const postsCount = await postsLocalRepository.getPostsCount(filters);
+        const result = await this.postsRepository.findPosts(filters);
+        const postsCount = await this.postsRepository.getPostsCount(filters);
 
         return {
             pagesCount: Math.ceil(postsCount / filters.pageSize),
@@ -57,16 +66,16 @@ export const postsService = {
             totalCount: postsCount,
             items: result.map((post: DBPostType) => this._mapDBPostToPostOutputModel(post, userId))
         };
-    },
+    }
 
     async getPost(id: string, userId = ''): Promise<DBPostType | null> {
-        const result = await postsLocalRepository.findPost(id);
+        const result = await this.postsRepository.findPost(id);
 
         return result && this._mapDBPostToPostOutputModel(result, userId);
-    },
+    }
 
-    async setPost(newPost: PostOutputType, userId = ''): Promise<DBPostType> {
-        const blog = await blogsLocalRepository.findBlog(newPost.blogId);
+    async addPost(newPost: PostType, userId = ''): Promise<DBPostType> {
+        const blog = await this.blogsRepository.findBlog(newPost.blogId);
         const post = {
             id: `${+(new Date())}`,
             title: newPost.title,
@@ -80,14 +89,14 @@ export const postsService = {
             }
         };
 
-        const result = await postsLocalRepository.createPost(post);
+        const result = await this.postsRepository.createPost(post);
 
         return this._mapDBPostToPostOutputModel(result, userId);
-    },
+    }
 
-    async editPost(id: string, newPost: PostOutputType): Promise<DBPostType | null> {
-        const blog = await blogsLocalRepository.findBlog(newPost.blogId);
-        const result = await postsLocalRepository.updatePost(id, {
+    async editPost(id: string, newPost: PostType): Promise<DBPostType | null> {
+        const blog = await this.blogsRepository.findBlog(newPost.blogId);
+        const result = await this.postsRepository.updatePost(id, {
             title: newPost.title,
             shortDescription: newPost.shortDescription,
             content: newPost.content,
@@ -96,17 +105,17 @@ export const postsService = {
         });
 
         return result && this._mapDBPostToPostOutputModel(result);
-    },
+    }
 
-    async editPostExtendedLikesInfo(id: string, likeStatus: LikeStatusesType, userId: string): Promise<void> {
-        const result = await postsLocalRepository.findPost(id);
-        const user = await usersService.getUserById(userId);
+    async editPostExtendedLikesInfo(id: string, likeStatus: LikeStatusType, userId: string): Promise<void> {
+        const result = await this.postsRepository.findPost(id);
+        const user = await this.usersService.getUserById(userId);
 
         if (result && user) {
             let likes = result.extendedLikesInfo.likes!.filter(like => like.userId !== userId);
             let dislikes = result.extendedLikesInfo.dislikes!.filter(dislike => dislike.userId !== userId);
 
-            if (likeStatus === LikeStatusType.Like) {
+            if (likeStatus === LikeStatusEnum.Like) {
                 likes.push({
                     userId,
                     login: user.login,
@@ -114,7 +123,7 @@ export const postsService = {
                 });
             }
 
-            if (likeStatus === LikeStatusType.Dislike) {
+            if (likeStatus === LikeStatusEnum.Dislike) {
                 dislikes.push({
                     userId,
                     login: user.login,
@@ -122,25 +131,25 @@ export const postsService = {
                 });
             }
 
-            await postsLocalRepository.updatePostExtendedLikesInfo(id, likes, dislikes);
+            await this.postsRepository.updatePostExtendedLikesInfo(id, likes, dislikes);
         }
-    },
+    }
 
-    async deletePost(id: string): Promise<DBPostType | null> {
-        const result = await postsLocalRepository.removePost(id);
+    async removePost(id: string): Promise<DBPostType | null> {
+        const result = await this.postsRepository.deletePost(id);
 
         return result && this._mapDBPostToPostOutputModel(result);
-    },
+    }
 
     async getComments(postId: string, queryParams: ParsedQs, userId = ''): Promise<PaginationType<DBCommentType> | null> {
-        return await this.getPost(postId) && await commentsService.getComments(postId, queryParams, userId);
-    },
-
-    async setComment(postId: string, newComment: CommentOutputType, userId: string): Promise<DBCommentType | null> {
-        return await this.getPost(postId) && await commentsService.setComment(postId, newComment, userId);
-    },
-
-    async deleteAll(): Promise<void> {
-        await postsLocalRepository.removeAll();
+        return await this.getPost(postId) && await this.commentsService.getComments(postId, queryParams, userId);
     }
-};
+
+    async addComment(postId: string, newComment: CommentType, userId: string): Promise<DBCommentType | null> {
+        return await this.getPost(postId) && await this.commentsService.addComment(postId, newComment, userId);
+    }
+
+    async removeAll(): Promise<void> {
+        await this.postsRepository.deleteAll();
+    }
+}

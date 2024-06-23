@@ -1,15 +1,16 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { body } from 'express-validator';
-import { CodeResponsesEnum } from '../types';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
-import { usersService } from '../domain/users-service';
-import { jwtService } from '../application/jwt-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
 import { loginValidation, emailValidation as userEmailValidation, passwordValidation as userPasswordValidation } from './users-router';
-import { authService } from '../domain/auth-service';
 import { refreshTokenMiddleware } from '../middlewares/refresh-token-middleware';
-import { devicesService } from '../domain/devices-service';
 import { requestsMiddleware } from '../middlewares/requests-middleware';
+import { AuthController } from '../controllers/auth-controller';
+import { UsersService } from '../domain/users-service';
+import { container } from '../features/composition-root';
+
+const authController = container.resolve(AuthController);
+const usersService = container.resolve(UsersService);
 
 export const authRouter = Router({});
 
@@ -45,36 +46,13 @@ const emailConfirmationValidation = body('email').isEmail().withMessage('email i
     return true;
 });
 
-authRouter.get('/me', authMiddleware, async (req: Request, res: Response) => {
-    const user = await usersService.getMeById(req.userId!);
-
-    res.send(user);
-});
-
+authRouter.get('/me', authMiddleware, authController.getMe.bind(authController));
 authRouter.post('/login',
     requestsMiddleware,
     loginOrEmailValidation,
     passwordValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const user = await usersService.checkCredentials(req.body);
-
-        if (!user) {
-            res.send(CodeResponsesEnum.Unauthorized_401);
-        } else {
-            const ip = req.ip!;
-            const title = req.headers['user-agent'] || 'device';
-            const device = await devicesService.setDevice(user.id, ip, title);
-            const accessToken = await jwtService.createJWT({ userId: user.id }, '10m');
-            const refreshToken = await jwtService.createJWT(
-                { userId: user.id, deviceId: device.deviceId, lastActiveDate: device.lastActiveDate },
-                '20m'
-            );
-
-            res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
-            res.send({ accessToken });
-        }
-    }
+    authController.postLogin.bind(authController)
 );
 
 authRouter.post('/registration',
@@ -83,62 +61,30 @@ authRouter.post('/registration',
     userEmailValidation,
     userPasswordValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        await authService.setUser(req.body);
-
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
+    authController.postRegistration.bind(authController)
 );
 
 authRouter.post('/registration-confirmation',
     requestsMiddleware,
     codeValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        await authService.confirmEmail(req.body.code);
-
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
+    authController.postRegistrationConfirmation.bind(authController)
 );
 
 authRouter.post('/registration-email-resending',
     requestsMiddleware,
     emailConfirmationValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        await authService.resendingEmail(req.body.email);
-
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
+    authController.postRegistrationEmailResending.bind(authController)
 );
 
-authRouter.post('/refresh-token', refreshTokenMiddleware, async (req: Request, res: Response) => {
-    const updatedDevice = await devicesService.editDevice(req.deviceId!, req.ip!);
-    const accessToken = await jwtService.createJWT({ userId: req.userId! }, '10m');
-    const refreshToken = await jwtService.createJWT(
-        { userId: req.userId!, deviceId: req.deviceId!, lastActiveDate: updatedDevice!.lastActiveDate },
-        '20m'
-    );
-
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
-    res.send({ accessToken });
-});
-
-authRouter.post('/logout', refreshTokenMiddleware, async (req: Request, res: Response) => {
-    await devicesService.deleteDevice(req.deviceId!);
-
-    res.send(CodeResponsesEnum.Not_content_204);
-});
-
+authRouter.post('/refresh-token', refreshTokenMiddleware, authController.postRefreshToken.bind(authController));
+authRouter.post('/logout', refreshTokenMiddleware, authController.postLogout.bind(authController));
 authRouter.post('/password-recovery',
     requestsMiddleware,
     emailValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        await authService.passwordRecovery(req.body.email);
-
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
+    authController.postPasswordRecovery.bind(authController)
 );
 
 authRouter.post('/new-password',
@@ -146,9 +92,5 @@ authRouter.post('/new-password',
     newPasswordValidation,
     recoveryCodeValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        await authService.setNewPassword(req.body.recoveryCode, req.body.newPassword);
-
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
+    authController.postNewPassword.bind(authController)
 );

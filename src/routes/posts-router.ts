@@ -1,13 +1,16 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { body } from 'express-validator';
-import { CodeResponsesEnum } from '../types';
 import { authorizationMiddleware } from '../middlewares/authorization-middleware';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
-import { blogsLocalRepository } from '../repositories/blogs-repository';
-import { postsService } from '../domain/posts-service';
 import { authMiddleware } from '../middlewares/auth-middleware';
 import { commentValidation, likeValidation } from './comments-router';
 import { userIdMiddleware } from '../middlewares/user-id-middleware';
+import { PostsController } from '../controllers/posts-controller';
+import { BlogsService } from '../domain/blogs-service';
+import { container } from '../features/composition-root';
+
+const postsController = container.resolve(PostsController);
+const blogsService = container.get(BlogsService);
 
 export const postsRouter = Router({});
 
@@ -15,7 +18,7 @@ export const titleValidation = body('title').isString().withMessage('title is in
 export const shortDescriptionValidation = body('shortDescription').isString().withMessage('short description is invalid').trim().notEmpty().withMessage('short description is required').isLength({ max: 100 }).withMessage('short description is too long');
 export const contentValidation = body('content').isString().withMessage('content is invalid').trim().notEmpty().withMessage('content is required').isLength({ max: 1000 }).withMessage('content is too long');
 const blogIdValidation = body('blogId').notEmpty().withMessage('blog id is required').custom(async blogId => {
-    const foundBlog = await blogsLocalRepository.findBlog(blogId);
+    const foundBlog = await blogsService.getBlog(blogId);
 
     if (!foundBlog) {
         throw new Error('blog id is invalid');
@@ -24,22 +27,8 @@ const blogIdValidation = body('blogId').notEmpty().withMessage('blog id is requi
     return true;
 });
 
-postsRouter.get('/', userIdMiddleware, async (req: Request, res: Response) => {
-    const foundPosts = await postsService.getPosts(req.query, req.userId as string);
-
-    res.send(foundPosts);
-});
-
-postsRouter.get('/:postId', userIdMiddleware, async (req: Request, res: Response) => {
-    const foundPost = await postsService.getPost(req.params.postId, req.userId as string);
-
-    if (!foundPost) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        res.send(foundPost);
-    }
-});
-
+postsRouter.get('/', userIdMiddleware, postsController.getPosts.bind(postsController));
+postsRouter.get('/:postId', userIdMiddleware, postsController.getPost.bind(postsController));
 postsRouter.post('/',
     authorizationMiddleware,
     titleValidation,
@@ -48,11 +37,7 @@ postsRouter.post('/',
     blogIdValidation,
     inputValidationMiddleware,
     userIdMiddleware,
-    async (req: Request, res: Response) => {
-        const createdPost = await postsService.setPost(req.body, req.userId as string);
-
-        res.status(CodeResponsesEnum.Created_201).send(createdPost);
-    }
+    postsController.postPosts.bind(postsController)
 );
 
 postsRouter.put('/:postId',
@@ -62,65 +47,21 @@ postsRouter.put('/:postId',
     contentValidation,
     blogIdValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const updatedPost = await postsService.editPost(req.params.postId, req.body);
-
-        if (!updatedPost) {
-            res.send(CodeResponsesEnum.Not_found_404);
-        } else {
-            res.send(CodeResponsesEnum.Not_content_204);
-        }
-    }
+    postsController.putPost.bind(postsController)
 );
 
 postsRouter.put('/:postId/like-status',
     authMiddleware,
     likeValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const foundPost = await postsService.getPost(req.params.postId);
-
-        if (!foundPost) {
-            res.send(CodeResponsesEnum.Not_found_404);
-        } else {
-            await postsService.editPostExtendedLikesInfo(req.params.postId, req.body.likeStatus, req.userId as string);
-
-            res.send(CodeResponsesEnum.Not_content_204);
-        }
-    }
+    postsController.putLikeStatus.bind(postsController)
 );
 
-postsRouter.delete('/:postId', authorizationMiddleware, async (req: Request, res: Response) => {
-    const deletedPost = await postsService.deletePost(req.params.postId);
-
-    if (!deletedPost) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
-});
-
-postsRouter.get('/:postId/comments', userIdMiddleware, async (req: Request, res: Response) => {
-    const foundComments = await postsService.getComments(req.params.postId, req.query, req.userId as string);
-
-    if (!foundComments) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        res.send(foundComments);
-    }
-});
-
+postsRouter.delete('/:postId', authorizationMiddleware, postsController.deletePost.bind(postsController));
+postsRouter.get('/:postId/comments', userIdMiddleware, postsController.getComments.bind(postsController));
 postsRouter.post('/:postId/comments',
     authMiddleware,
     commentValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const createdComment = await postsService.setComment(req.params.postId, req.body, req.userId as string);
-
-        if (!createdComment) {
-            res.send(CodeResponsesEnum.Not_found_404);
-        } else {
-            res.status(CodeResponsesEnum.Created_201).send(createdComment);
-        }
-    }
+    postsController.postComments.bind(postsController)
 );

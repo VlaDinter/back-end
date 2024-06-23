@@ -1,20 +1,23 @@
 import nodemailer from 'nodemailer';
+import { settings } from '../settings';
 
 export const emailAdapter = {
-    async sendEmail(email: string, subject: string, message: string) {
+    async sendEmail(email: string, title: string, message: string) {
         const transport = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'dimychdeveloper@gmail.com',
-                pass: 'kpxjtwaczmbyxwwe'
+                user: settings.EMAIL_FROM,
+                pass: settings.EMAIL_FROM_PASSWORD
             }
         });
 
         await transport.sendMail({
             from: 'Dimych <dimychdeveloper@gmail.com>',
             to: email,
-            subject: subject,
+            subject: title,
             html: message
+        }, (error) => {
+            console.log(error);
         });
     }
 };

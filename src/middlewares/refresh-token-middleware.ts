@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { jwtService } from '../application/jwt-service';
 import { CodeResponsesEnum } from '../types';
-import { usersService } from '../domain/users-service';
-import { devicesService } from '../domain/devices-service';
+import { UsersService } from '../domain/users-service';
+import { DevicesService } from '../domain/devices-service';
+import { container } from '../features/composition-root';
+
+const usersService = container.get(UsersService);
+const devicesService = container.get(DevicesService);
 
 export const refreshTokenMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.cookies.refreshToken;
@@ -15,7 +19,7 @@ export const refreshTokenMiddleware = async (req: Request, res: Response, next: 
 
     const result = await jwtService.getResultByToken(token);
 
-    if (!result?.userId || !result?.deviceId || !result?.lastActiveDate) {
+    if (typeof result === 'string' || !result?.userId || !result?.deviceId || !result?.lastActiveDate) {
         res.send(CodeResponsesEnum.Unauthorized_401);
 
         return;
@@ -31,7 +35,7 @@ export const refreshTokenMiddleware = async (req: Request, res: Response, next: 
     }
 
     if (+device.expirationDate < +(new Date)) {
-        await devicesService.deleteDevice(device.deviceId);
+        await devicesService.removeDevice(device.deviceId);
 
         res.send(CodeResponsesEnum.Unauthorized_401);
 

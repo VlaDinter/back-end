@@ -9,11 +9,14 @@ import { usersRouter } from './routes/users-router';
 import { authRouter } from './routes/auth-router';
 import { commentsRouter } from './routes/comments-router';
 import { devicesRouter } from './routes/devices-router';
-import { initApp } from './features/init-app';
+import { AppController } from './controllers/app-controller';
+import { container } from './features/composition-root';
 
 export const app = express();
 
-app.use(bodyParser({}));
+const appController = container.resolve(AppController);
+
+app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(routerPaths.auth, authRouter);
 app.use(routerPaths.videos, videosRouter);
@@ -23,4 +26,5 @@ app.use(routerPaths.users, usersRouter);
 app.use(routerPaths.comments, commentsRouter);
 app.use(routerPaths.securityDevices, devicesRouter);
 app.set('trust proxy', true);
-initApp(app);
+app.get('/', appController.getHello.bind(appController));
+app.delete('/testing/all-data', appController.deleteAllData.bind(appController));

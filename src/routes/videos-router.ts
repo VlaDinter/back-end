@@ -1,10 +1,12 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { body } from 'express-validator';
-import { CodeResponsesEnum } from '../types';
 import { inputValidationMiddleware } from '../middlewares/input-validation-middleware';
-import { videosService } from '../domain/videos-service';
-import { AvailableResolutionType } from '../types/AvailableResolutionType';
+import { AvailableResolutionsEnum } from '../types/AvailableResolutionsEnum';
 import { AvailableResolutionsType } from '../types/AvailableResolutionsType';
+import { VideosController } from '../controllers/videos-controller';
+import { container } from '../features/composition-root';
+
+const videosController = container.resolve(VideosController);
 
 export const videosRouter = Router({});
 
@@ -15,14 +17,14 @@ const minAgeRestrictionValidation = body('minAgeRestriction', 'min age restricti
 const publicationDateValidation = body('publicationDate', 'publication date is invalid').optional().not().isArray().isISO8601();
 const availableResolutionsValidation = body('availableResolutions', 'available resolutions is invalid').optional({ nullable: true }).isArray().custom(value => {
     const validValues = [
-        AvailableResolutionType.P144,
-        AvailableResolutionType.P240,
-        AvailableResolutionType.P360,
-        AvailableResolutionType.P480,
-        AvailableResolutionType.P720,
-        AvailableResolutionType.P1080,
-        AvailableResolutionType.P1440,
-        AvailableResolutionType.P2160
+        AvailableResolutionsEnum.P144,
+        AvailableResolutionsEnum.P240,
+        AvailableResolutionsEnum.P360,
+        AvailableResolutionsEnum.P480,
+        AvailableResolutionsEnum.P720,
+        AvailableResolutionsEnum.P1080,
+        AvailableResolutionsEnum.P1440,
+        AvailableResolutionsEnum.P2160
     ];
 
     const isInvalid = value.some((item: AvailableResolutionsType) => !validValues.includes(item));
@@ -34,22 +36,8 @@ const availableResolutionsValidation = body('availableResolutions', 'available r
     return true;
 });
 
-videosRouter.get('/', async (req: Request, res: Response) => {
-    const foundVideos = await videosService.getVideos();
-
-    res.send(foundVideos);
-});
-
-videosRouter.get('/:videoId', async (req: Request, res: Response) => {
-    const foundVideo = await videosService.getVideo(+req.params.videoId);
-
-    if (!foundVideo) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        res.send(foundVideo);
-    }
-});
-
+videosRouter.get('/', videosController.getVideos.bind(videosController));
+videosRouter.get('/:videoId', videosController.getVideo.bind(videosController));
 videosRouter.post('/',
     titleValidation,
     authorValidation,
@@ -58,11 +46,7 @@ videosRouter.post('/',
     publicationDateValidation,
     availableResolutionsValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const createdVideo = await videosService.setVideo(req.body);
-
-        res.status(CodeResponsesEnum.Created_201).send(createdVideo);
-    }
+    videosController.postVideos.bind(videosController)
 );
 
 videosRouter.put('/:videoId',
@@ -73,23 +57,7 @@ videosRouter.put('/:videoId',
     publicationDateValidation,
     availableResolutionsValidation,
     inputValidationMiddleware,
-    async (req: Request, res: Response) => {
-        const updatedVideo = await videosService.editVideo(+req.params.videoId, req.body);
-
-        if (!updatedVideo) {
-            res.send(CodeResponsesEnum.Not_found_404);
-        } else {
-            res.send(CodeResponsesEnum.Not_content_204);
-        }
-    }
+    videosController.putVideo.bind(videosController)
 );
 
-videosRouter.delete('/:videoId', async (req: Request, res: Response) => {
-    const deletedVideo = await videosService.deleteVideo(+req.params.videoId);
-
-    if (!deletedVideo) {
-        res.send(CodeResponsesEnum.Not_found_404);
-    } else {
-        res.send(CodeResponsesEnum.Not_content_204);
-    }
-});
+videosRouter.delete('/:videoId', videosController.deleteVideo.bind(videosController));

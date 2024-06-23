@@ -1,4 +1,4 @@
-export type MeOutputType = {
+export type MeType = {
     userId: string,
     email: string,
     login: string

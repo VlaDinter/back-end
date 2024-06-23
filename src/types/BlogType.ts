@@ -1,4 +1,4 @@
-export type BlogOutputType = {
+export type BlogType = {
     name: string,
     description: string,
     websiteUrl: string
